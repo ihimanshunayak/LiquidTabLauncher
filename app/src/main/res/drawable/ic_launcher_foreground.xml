@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The launcher mark: a glass droplet — the Liquid Glass language reduced to a
+  single glyph. Drawn as a vector so it stays crisp at every icon size, and
+  layered as the foreground of an adaptive icon; the background is the plain
+  window floor colour from colors.xml.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer droplet, translucent white — glass over the dark plate. -->
+    <path
+        android:pathData="M54,24 C54,24 36,46.5 36,61.5 a18,18 0 0 0 36,0 C72,46.5 54,24 54,24 Z"
+        android:fillAlpha="0.14"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Inner droplet, the lighter glass core. -->
+    <path
+        android:pathData="M54,34 C54,34 42,50.5 42,61 a12,12 0 0 0 24,0 C66,50.5 54,34 54,34 Z"
+        android:fillAlpha="0.30"
+        android:fillColor="#FFFFFF" />
+
+    <!-- The specular highlight a glass surface always carries. -->
+    <path
+        android:pathData="M46,58 a3.2,4.6 0 1 0 6.4,0 a3.2,4.6 0 1 0 -6.4,0 Z"
+        android:fillAlpha="0.75"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Brand red bead beneath, borrowing FreeMusic's accent. -->
+    <path
+        android:pathData="M54,84 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0 Z"
+        android:fillColor="#FA2D48" />
+</vector>

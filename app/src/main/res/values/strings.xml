@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Liquid Tab</string>
+    <string name="settings_title">Launcher Settings</string>
+
+    <!-- Home -->
+    <string name="search_hint">Search apps</string>
+    <string name="app_library">All Apps</string>
+
+    <!-- Customization -->
+    <string name="customize">Customize</string>
+    <string name="add_to_home">Add to Home</string>
+    <string name="remove_from_home">Remove from Home</string>
+    <string name="new_folder">New Folder</string>
+    <string name="rename_folder">Rename Folder</string>
+    <string name="folder_name">Folder name</string>
+    <string name="delete_folder">Delete Folder</string>
+    <string name="app_info">App info</string>
+    <string name="uninstall">Uninstall</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+    <string name="save">Save</string>
+    <string name="rename">Rename</string>
+    <string name="remove">Remove</string>
+
+    <!-- Widgets -->
+    <string name="widget_clock">Clock</string>
+    <string name="widget_date">Date</string>
+    <string name="widget_weather">Weather</string>
+    <string name="widget_calendar">Calendar</string>
+    <string name="widget_battery">Battery</string>
+    <string name="widget_now_playing">Now Playing</string>
+    <string name="widget_favorites">Favorite Apps</string>
+    <string name="widget_quick_actions">Quick Actions</string>
+    <string name="add_widget">Add widget</string>
+    <string name="remove_widget">Remove widget</string>
+
+    <!-- Control center -->
+    <string name="control_center">Control Center</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="airplane_mode">Airplane mode</string>
+    <string name="brightness">Brightness</string>
+    <string name="volume">Volume</string>
+    <string name="rotation_lock">Rotation lock</string>
+    <string name="battery">Battery</string>
+    <string name="flashlight">Flashlight</string>
+    <string name="do_not_disturb">Do Not Disturb</string>
+
+    <!-- Now playing -->
+    <string name="nothing_playing">Nothing playing</string>
+    <string name="open_free_music">Open Free Music</string>
+
+    <!-- Settings -->
+    <string name="section_appearance">Appearance</string>
+    <string name="section_home">Home Screen</string>
+    <string name="section_dock">Dock</string>
+    <string name="section_library">App Library</string>
+    <string name="section_widgets">Widgets</string>
+    <string name="section_about">About</string>
+    <string name="setting_dark_mode">Dark mode</string>
+    <string name="setting_dark_mode_system">Follow system</string>
+    <string name="setting_dark_mode_light">Light</string>
+    <string name="setting_dark_mode_dark">Dark</string>
+    <string name="setting_glass">Liquid Glass</string>
+    <string name="setting_glass_summary">Frosted glass surfaces with blur and highlights</string>
+    <string name="setting_reduce_blur">Reduce dynamic blur</string>
+    <string name="setting_reduce_blur_summary">Fills glass surfaces solid instead of sampling the backdrop</string>
+    <string name="setting_grid_size">Grid columns</string>
+    <string name="setting_icon_size">Icon size</string>
+    <string name="setting_show_labels">Show app labels</string>
+    <string name="setting_dock_size">Dock apps</string>
+    <string name="setting_show_clock_widget">Show clock</string>
+    <string name="setting_show_date_widget">Show date</string>
+    <string name="setting_show_weather_widget">Show weather</string>
+    <string name="setting_show_week_glance">Week glance</string>
+    <string name="setting_show_battery_widget">Show battery</string>
+    <string name="setting_show_now_playing">Show Free Music player</string>
+    <string name="setting_show_favorites">Show favorite apps</string>
+    <string name="setting_show_quick_actions">Show quick actions</string>
+    <string name="setting_wallpaper">Background</string>
+    <string name="setting_wallpaper_pick">Choose an image</string>
+    <string name="setting_wallpaper_default">Default gradient</string>
+    <string name="setting_parallax">Parallax</string>
+    <string name="setting_animations">Animations</string>
+    <string name="setting_style">App style</string>
+    <string name="setting_library_style">App library style</string>
+    <string name="setting_columns">Columns</string>
+    <string name="setting_version">Version</string>
+    <string name="setting_default_home">Set as default Home app</string>
+    <string name="setting_default_home_summary">Android asks which Home app to use; choose Liquid Tab</string>
+    <string name="style_list">List</string>
+    <string name="style_grid">Grid</string>
+    <string name="close">Close</string>
+    <string name="reset_layout">Reset Home layout</string>
+    <string name="reset_layout_summary">Restores the default app order and removes all folders</string>
+
+    <!-- Search -->
+    <string name="search_section_apps">Applications</string>
+    <string name="search_section_actions">Actions</string>
+    <string name="search_no_results">No results</string>
+
+    <!-- Widget picker -->
+    <string name="widget_picker_title">Add a widget</string>
+    <string name="widget_picker_subtitle">Drag a widget onto the Home screen, or tap to place it</string>
+</resources>

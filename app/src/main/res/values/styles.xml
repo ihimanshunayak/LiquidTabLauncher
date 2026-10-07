@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The window a launcher paints into. The action-bar-free Material base is
+      the closest thing to a bare window available from API 26 without pulling
+      in the Material Components library for Compose apps; everything visible
+      is drawn by Compose anyway.
+
+      The Home activity uses the Transparent variant, so the system wallpaper
+      can sit behind the app when the user enables it. The default variant is
+      what Settings launches into.
+    -->
+    <style name="Theme.LiquidTab" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <style name="Theme.LiquidTab.Transparent" parent="Theme.LiquidTab">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!--
+          The wallpaper window is shown behind the activity; when the user
+          picks the system wallpaper as their background this is what makes it
+          visible without the launcher ever reading it.
+        -->
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+    </style>
+</resources>

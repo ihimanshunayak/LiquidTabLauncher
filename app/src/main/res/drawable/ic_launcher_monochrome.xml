@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Monochrome variant for themed icons: the same droplet geometry, flat colour —
+  the platform tints it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M54,24 C54,24 36,46.5 36,61.5 a18,18 0 0 0 36,0 C72,46.5 54,24 54,24 Z M54,38 C54,38 44,52.8 44,61 a10,10 0 0 0 20,0 C64,52.8 54,38 54,38 Z"
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd" />
+</vector>

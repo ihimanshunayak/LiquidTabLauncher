@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Liquid Tab Launcher — the FreeMusic design system as a tablet Home app.
+
+  Two things make this a launcher rather than a normal app:
+
+   1. HomeActivity claims ACTION_MAIN + CATEGORY_HOME + CATEGORY_DEFAULT, so
+      Android offers it as a Home app on the default-home chooser.
+   2. A <queries> element declares what the launcher may see across packages:
+      launchable apps for the workspace/library/search, and the media3 service
+      actions so the Now Playing widget can reach the FreeMusic player.
+      QUERY_ALL_PACKAGES is deliberately NOT used — it is a Play-policy
+      restricted permission and visibility of launchable apps is all a
+      launcher actually needs.
+
+  Permissions are kept to the minimum the features actually use: the network
+  for the weather widget, boot to restart the clock, and nothing else. The
+  launcher reads no wallpaper permission — it paints its own background stack
+  (and offers a photo picker for a personal image) rather than reaching for
+  the system wallpaper.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--
+      Quick Controls asks for these only when the user taps the corresponding
+      tile; the launcher functions fully without either being granted.
+    -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission
+        android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions"
+        xmlns:tools="http://schemas.android.com/tools" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="androidx.media3.session.MediaLibraryService" />
+        </intent>
+        <intent>
+            <action android:name="androidx.media3.session.MediaSessionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".LiquidTabApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LiquidTab">
+
+        <!--
+          The Home activity itself. `stateNotNeeded` and `excludeFromRecents`
+          are the launcher contract: the Home app is always alive, so Android
+          must not try to restore it into a saved state, and it must never
+          appear in its own recents list. `launchMode` singleTask keeps every
+          Home press targeting one instance — without it, repeated Home presses
+          can stack duplicate homes.
+
+          Orientation and size changes are handled in place rather than by
+          recreating the activity: a launcher rebuilds its whole workspace on
+          recreate, and rotation happens many times a day.
+        -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|density|uiMode|layoutDirection"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.LiquidTab.Transparent">
+            <intent-filter android:priority="1">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          The only other entry point: settings, reachable from the launcher
+          itself and from Settings > Apps. Not exported — launchers never
+          advertise their own preferences to the system launcher list.
+        -->
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:theme="@style/Theme.LiquidTab" />
+
+        <!--
+          A reboot invalidates nothing the launcher persists, but the clock and
+          date widgets should re-read immediately rather than at the next tick.
+        -->
+        <receiver
+            android:name=".widgets.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
