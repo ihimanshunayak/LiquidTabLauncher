@@ -108,6 +108,7 @@ fun HomeScreen(
     onOpenLibrary: () -> Unit = {},
     homePressTick: Int = 0,
     modifier: Modifier = Modifier,
+    backgroundModifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as LiquidTabApp
@@ -252,10 +253,23 @@ fun HomeScreen(
         )
         val cellWidth = resolveCellWidth(windowWidth, columns)
 
+        // The recorded backdrop layer lives here, on the background alone.
+        //
+        // The dock below is the one surface that samples this layer, and a
+        // surface must never be a descendant of the node that records it:
+        // putting this modifier on the whole window instead - which is what a
+        // full-screen glass dock invites - nested the dock inside its own
+        // backdrop. Android then walked that cycle in RenderNode::prepareTreeImpl
+        // until the render thread ran out of stack and the process died with a
+        // SIGSEGV in libhwui, pointing at nothing in this code.
+        //
+        // Nothing is lost by recording only the wallpaper: the grid stops above
+        // the dock, so the wallpaper is the entire picture behind that glass.
         HomeBackground(
             wallpaperMode = wallpaperMode,
             artworkUri = null,
             parallaxFraction = pagerScrollFraction(pagerState),
+            modifier = backgroundModifier,
         )
 
         Column(

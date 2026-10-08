@@ -123,9 +123,24 @@ class HomeActivity : ComponentActivity() {
                     LocalReduceDynamicBlur provides reduceDynamicBlur,
                     LocalAppBackdrop provides appBackdrop,
                 ) {
+                    // The recorded layer is handed to the background, not to
+                    // this root, and that placement is load-bearing: a surface
+                    // that samples a layer must never be a descendant of the
+                    // node that records it. The dock is the sampler here, so
+                    // recording the whole window would put the dock inside the
+                    // layer it draws and Android would recurse down that cycle
+                    // until the render thread ran out of stack - a native crash
+                    // at launch, with no Kotlin frame to point at it.
+                    //
+                    // Recording the background alone is also all the dock ever
+                    // needs: the grid stops above the dock, so wallpaper is the
+                    // entire picture behind that glass.
                     LauncherRoot(
-                        glassSamplesBackdrop = glassSamplesBackdrop,
-                        appBackdrop = appBackdrop,
+                        backgroundModifier = if (glassSamplesBackdrop) {
+                            Modifier.layerBackdrop(appBackdrop)
+                        } else {
+                            Modifier
+                        },
                         homePressTick = homePressTick,
                     )
                 }
@@ -160,8 +175,7 @@ class HomeActivity : ComponentActivity() {
  */
 @Composable
 private fun LauncherRoot(
-    glassSamplesBackdrop: Boolean,
-    appBackdrop: com.ihimanshunayak.liquidtab.ui.glass.backdrop.backdrops.LayerBackdrop,
+    backgroundModifier: Modifier,
     homePressTick: Int,
 ) {
     val context = LocalContext.current
@@ -202,13 +216,7 @@ private fun LauncherRoot(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(
-                if (glassSamplesBackdrop) Modifier.layerBackdrop(appBackdrop) else Modifier,
-            ),
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val measuredWidth = maxWidth
             val measuredHeight = maxHeight
@@ -218,6 +226,7 @@ private fun LauncherRoot(
                 windowHeight = measuredHeight,
                 onOpenLibrary = { surface = Surface.LIBRARY },
                 homePressTick = gridTick,
+                backgroundModifier = backgroundModifier,
                 // A drag from the top-right corner or downwards from the top
                 // edge is the Control Center; a swipe up from the bottom edge is
                 // the app library. Both are measured against the window's own
