@@ -20,22 +20,47 @@
       Home role was never granted.
 
   Permissions are kept to the minimum the features actually use: the network
-  for the weather widget, boot to restart the clock, and nothing else. The
-  launcher reads no wallpaper permission — it paints its own background stack
-  (and offers a photo picker for a personal image) rather than reaching for
-  the system wallpaper.
+  for the weather widget, boot to restart the clock, a calendar read that the
+  calendar widget asks for in place, and the two device controls the Quick
+  Controls panel offers. The launcher reads no wallpaper permission — it paints
+  its own background stack (and offers a photo picker for a personal image)
+  rather than reaching for the system wallpaper.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!--
+      Every long press on the Home screen plays a haptic, and a launcher is
+      built out of long presses. Without this the vibrate call throws
+      SecurityException on the main thread and takes the launcher down with it,
+      so this is not a nicety — it is the difference between a Home screen that
+      responds to a press-and-hold and one that crashes on it.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!--
+      The calendar widget's read. Declared here even though nothing asks for it
+      at launch: a runtime request for a permission that is absent from the
+      manifest is answered with an immediate denial and no dialog, so without
+      this line the widget's own "Grant access" button could never work.
+    -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
     <!--
       Quick Controls asks for these only when the user taps the corresponding
       tile; the launcher functions fully without either being granted.
     -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!--
+      WRITE_SETTINGS is a special permission: it is never granted from a dialog,
+      only from the Settings screen the brightness tile opens. It is declared
+      so the tile can offer to open that screen, and the tile works without it
+      by writing the window-level brightness instead.
+    -->
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions"

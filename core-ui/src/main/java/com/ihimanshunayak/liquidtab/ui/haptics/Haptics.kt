@@ -9,11 +9,14 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import java.util.concurrent.atomic.AtomicBoolean
+
+private const val TAG = "Haptics"
 
 /**
  * What a touch *meant*, not what it should feel like — the shape of the buzz is
@@ -183,12 +186,19 @@ private class HapticDevice private constructor(
         val effect = synchronized(compiled) {
             compiled.getOrPut(haptic) { compile(rhythmOf(haptic)) }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            TouchVibration.send(vibrator, effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(effect, LEGACY_ATTRIBUTES)
-        }
+        // A haptic is decoration. If the platform refuses this one — no VIBRATE
+        // permission, a device with no vibrator, a vendor build that rejects the
+        // effect — the tap still has to do what it was going to do. An
+        // uncaught throw here lands on the main thread of the Home screen and
+        // turns a long press into a crash.
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                TouchVibration.send(vibrator, effect)
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(effect, LEGACY_ATTRIBUTES)
+            }
+        }.onFailure { Log.w(TAG, "Haptic playback failed", it) }
     }
 
     private fun compile(beats: List<Beat>): VibrationEffect = when {
