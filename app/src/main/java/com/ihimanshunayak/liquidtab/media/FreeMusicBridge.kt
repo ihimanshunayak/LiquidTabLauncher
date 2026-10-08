@@ -29,10 +29,12 @@ package com.ihimanshunayak.liquidtab.media
 
 import android.content.ComponentName
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.WidgetSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -93,7 +95,7 @@ object FreeMusicBridge {
         val token = sessionToken(appContext)
         if (token == null) {
             _installed.value = false
-            _state.value = WidgetSource.Unavailable("FreeMusic is not installed")
+            _state.value = WidgetSource.Unavailable(R.string.music_reason_not_installed)
             return
         }
         connecting = true
@@ -105,7 +107,7 @@ object FreeMusicBridge {
                 if (built == null) {
                     // No session running: the ordinary state for a user who has
                     // not opened FreeMusic yet, not a failure to report.
-                    _state.value = WidgetSource.Unavailable("Open FreeMusic to start playing")
+                    _state.value = WidgetSource.Unavailable(R.string.music_reason_not_playing)
                     return@addListener
                 }
                 // The widget can be gone by now: the session build is a service
@@ -160,7 +162,7 @@ object FreeMusicBridge {
     private fun publish() {
         val current = controller
         if (current == null) {
-            _state.value = WidgetSource.Unavailable("Open FreeMusic to start playing")
+            _state.value = WidgetSource.Unavailable(R.string.music_reason_not_playing)
             return
         }
         val metadata = runCatching { current.mediaMetadata }.getOrNull()
@@ -168,7 +170,7 @@ object FreeMusicBridge {
         if (title == null) {
             // A session with no item loaded is "nothing playing", not an empty
             // widget with a title of "".
-            _state.value = WidgetSource.Unavailable("Nothing playing")
+            _state.value = WidgetSource.Unavailable(R.string.nothing_playing)
             return
         }
         _state.value = WidgetSource.Ready(

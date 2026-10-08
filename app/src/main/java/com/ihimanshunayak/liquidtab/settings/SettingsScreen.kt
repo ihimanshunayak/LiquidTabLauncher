@@ -59,12 +59,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.LauncherSettings
 import com.ihimanshunayak.liquidtab.data.LauncherStore
 import com.ihimanshunayak.liquidtab.data.LibraryStyle
@@ -95,14 +98,14 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                SettingsSection(title = "Appearance") {
+                SettingsSection(title = stringResource(R.string.section_appearance)) {
                     val themeMode by LauncherSettings.themeMode.state.collectAsStateWithLifecycle()
                     SegmentRow(
-                        title = "Theme",
+                        title = stringResource(R.string.setting_theme),
                         options = listOf(
-                            ThemeMode.SYSTEM to "System",
-                            ThemeMode.LIGHT to "Light",
-                            ThemeMode.DARK to "Dark",
+                            ThemeMode.SYSTEM to stringResource(R.string.theme_system),
+                            ThemeMode.LIGHT to stringResource(R.string.theme_light),
+                            ThemeMode.DARK to stringResource(R.string.theme_dark),
                         ),
                         selected = themeMode,
                         onSelect = { LauncherSettings.themeMode.value = it },
@@ -110,11 +113,11 @@ fun SettingsScreen(
                     RowDivider()
                     val glassEnabled by LauncherSettings.glassEnabled.state.collectAsStateWithLifecycle()
                     SwitchRow(
-                        title = "Liquid glass",
+                        title = stringResource(R.string.setting_glass),
                         subtitle = if (isGlassSupported()) {
-                            "Blurred, refractive surfaces over the Home background"
+                            stringResource(R.string.setting_glass_summary)
                         } else {
-                            "Unavailable on this Android version — needs Android 12"
+                            stringResource(R.string.setting_glass_unsupported)
                         },
                         checked = glassEnabled,
                         enabled = isGlassSupported(),
@@ -123,8 +126,8 @@ fun SettingsScreen(
                     RowDivider()
                     val reduceBlur by LauncherSettings.reduceDynamicBlur.state.collectAsStateWithLifecycle()
                     SwitchRow(
-                        title = "Reduce dynamic blur",
-                        subtitle = "Fills glass surfaces solid instead of sampling behind them",
+                        title = stringResource(R.string.setting_reduce_blur),
+                        subtitle = stringResource(R.string.setting_reduce_blur_summary),
                         checked = reduceBlur,
                         enabled = true,
                         onChange = { LauncherSettings.reduceDynamicBlur.value = it },
@@ -132,8 +135,8 @@ fun SettingsScreen(
                     RowDivider()
                     val showLabels by LauncherSettings.showLabels.state.collectAsStateWithLifecycle()
                     SwitchRow(
-                        title = "Show app names",
-                        subtitle = "Draws each shortcut's label under its icon",
+                        title = stringResource(R.string.setting_show_labels),
+                        subtitle = stringResource(R.string.setting_show_labels_summary),
                         checked = showLabels,
                         enabled = true,
                         onChange = { LauncherSettings.showLabels.value = it },
@@ -141,31 +144,41 @@ fun SettingsScreen(
                     RowDivider()
                     val iconScale by LauncherSettings.iconScale.state.collectAsStateWithLifecycle()
                     SliderRow(
-                        title = "Icon size",
+                        title = stringResource(R.string.setting_icon_size),
                         value = iconScale,
                         valueRange = 0.8f..1.2f,
                         steps = 3,
-                        label = { scale -> "${(scale * 100).toInt()}%" },
+                        label = { scale ->
+                            stringResource(R.string.value_percent, (scale * 100).toInt())
+                        },
                         onChange = { LauncherSettings.iconScale.value = it },
                     )
                     RowDivider()
                     val columns by LauncherSettings.gridColumns.state.collectAsStateWithLifecycle()
                     SliderRow(
-                        title = "Grid columns",
+                        title = stringResource(R.string.setting_grid_size),
                         value = columns.toFloat(),
                         valueRange = 0f..10f,
                         steps = 9,
-                        label = { value -> value.toInt().let { if (it == 0) "Automatic" else "$it columns" } },
+                        label = { value ->
+                            value.toInt().let {
+                                if (it == 0) {
+                                    stringResource(R.string.value_automatic)
+                                } else {
+                                    pluralStringResource(R.plurals.value_columns, it, it)
+                                }
+                            }
+                        },
                         onChange = { LauncherSettings.gridColumns.value = it.toInt() },
                     )
                 }
             }
 
             item {
-                SettingsSection(title = "Dock") {
+                SettingsSection(title = stringResource(R.string.section_dock)) {
                     val dockMax by LauncherSettings.dockMaxItems.state.collectAsStateWithLifecycle()
                     SliderRow(
-                        title = "Maximum apps in the dock",
+                        title = stringResource(R.string.setting_dock_max),
                         value = dockMax.toFloat(),
                         valueRange = 3f..8f,
                         steps = 4,
@@ -176,14 +189,14 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "Background") {
+                SettingsSection(title = stringResource(R.string.section_background)) {
                     val wallpaperMode by LauncherSettings.wallpaperMode.state.collectAsStateWithLifecycle()
                     SegmentRow(
-                        title = "Source",
+                        title = stringResource(R.string.setting_wallpaper_source),
                         options = listOf(
-                            WallpaperMode.GRADIENT to "Gradient",
-                            WallpaperMode.IMAGE to "Photo",
-                            WallpaperMode.ARTWORK to "Now playing",
+                            WallpaperMode.GRADIENT to stringResource(R.string.wallpaper_gradient),
+                            WallpaperMode.IMAGE to stringResource(R.string.wallpaper_photo),
+                            WallpaperMode.ARTWORK to stringResource(R.string.wallpaper_now_playing),
                         ),
                         selected = wallpaperMode,
                         onSelect = { LauncherSettings.wallpaperMode.value = it },
@@ -191,8 +204,8 @@ fun SettingsScreen(
                     RowDivider()
                     val parallax by LauncherSettings.parallax.state.collectAsStateWithLifecycle()
                     SwitchRow(
-                        title = "Parallax",
-                        subtitle = "Moves the background slightly as pages change",
+                        title = stringResource(R.string.setting_parallax),
+                        subtitle = stringResource(R.string.setting_parallax_summary),
                         checked = parallax,
                         enabled = true,
                         onChange = { LauncherSettings.parallax.value = it },
@@ -204,11 +217,13 @@ fun SettingsScreen(
                         val amount by LauncherSettings.wallpaperParallaxAmount.state
                             .collectAsStateWithLifecycle()
                         SliderRow(
-                            title = "Parallax strength",
+                            title = stringResource(R.string.setting_parallax_strength),
                             value = amount,
                             valueRange = 0.05f..0.40f,
                             steps = 6,
-                            label = { value -> "${(value * 100).toInt()}%" },
+                            label = { value ->
+                                stringResource(R.string.value_percent, (value * 100).toInt())
+                            },
                             onChange = { LauncherSettings.wallpaperParallaxAmount.value = it },
                         )
                     }
@@ -216,11 +231,11 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "Behaviour") {
+                SettingsSection(title = stringResource(R.string.section_behaviour)) {
                     val reduceMotion by LauncherSettings.reduceMotion.state.collectAsStateWithLifecycle()
                     SwitchRow(
-                        title = "Reduce motion",
-                        subtitle = "Drops the scale and lift animations during a drag",
+                        title = stringResource(R.string.setting_reduce_motion),
+                        subtitle = stringResource(R.string.setting_reduce_motion_summary),
                         checked = reduceMotion,
                         enabled = true,
                         onChange = { LauncherSettings.reduceMotion.value = it },
@@ -228,10 +243,10 @@ fun SettingsScreen(
                     RowDivider()
                     val libraryStyle by LauncherSettings.libraryStyle.state.collectAsStateWithLifecycle()
                     SegmentRow(
-                        title = "App library",
+                        title = stringResource(R.string.setting_library_style),
                         options = listOf(
-                            LibraryStyle.LIST to "List",
-                            LibraryStyle.GRID to "Grid",
+                            LibraryStyle.LIST to stringResource(R.string.style_list),
+                            LibraryStyle.GRID to stringResource(R.string.style_grid),
                         ),
                         selected = libraryStyle,
                         onSelect = { LauncherSettings.libraryStyle.value = it },
@@ -244,10 +259,10 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "About") {
+                SettingsSection(title = stringResource(R.string.section_about)) {
                     NavRow(
-                        title = "About Liquid Tab Launcher",
-                        subtitle = "Version, device, Home status and software notices",
+                        title = stringResource(R.string.setting_about_title),
+                        subtitle = stringResource(R.string.setting_about_summary),
                         onClick = onOpenAbout,
                     )
                 }
@@ -270,9 +285,9 @@ fun SettingsScreen(
 private fun PagesSection() {
     val context = LocalContext.current
     val workspace by LauncherStore.workspace.collectAsStateWithLifecycle()
-    val labels = remember(workspace) { workspaceLabels(workspace, emptyMap()) }
+    val labels = workspaceLabels(workspace, emptyMap())
 
-    SettingsSection(title = "Home pages") {
+    SettingsSection(title = stringResource(R.string.section_home_pages)) {
         PagesStrip(
             workspace = workspace,
             labels = labels,
@@ -280,14 +295,14 @@ private fun PagesSection() {
             onSetHomePage = { pageId ->
                 LauncherStore.update { WorkspaceOps.setDefaultPage(it, pageId) }
                 val number = workspace.pages.indexOfFirst { page -> page.id == pageId } + 1
-                toast(context, "A Home press will open page $number")
+                toast(context, context.getString(R.string.toast_home_page_set, number))
             },
         )
         RowDivider()
         val showIndicator by LauncherSettings.showPageIndicator.state.collectAsStateWithLifecycle()
         SwitchRow(
-            title = "Show page indicator",
-            subtitle = "Dots under the grid, each one a way to reach its page",
+            title = stringResource(R.string.setting_show_page_indicator),
+            subtitle = stringResource(R.string.setting_show_page_indicator_summary),
             checked = showIndicator,
             enabled = true,
             onChange = { LauncherSettings.showPageIndicator.value = it },
@@ -330,7 +345,7 @@ private fun PagesStrip(
                     .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                     .clickable(
                         role = Role.Button,
-                        onClickLabel = "Make page ${index + 1} the Home page",
+                        onClickLabel = stringResource(R.string.a11y_make_page_home, index + 1),
                         onClick = {
                             haptics.play(Haptic.Select)
                             onSetHomePage(page.id)
@@ -354,7 +369,11 @@ private fun PagesStrip(
                         )
                     }
                     Text(
-                        text = if (isHome) "Page ${index + 1} · Home" else "Page ${index + 1}",
+                        text = if (isHome) {
+                            stringResource(R.string.page_label_home, index + 1)
+                        } else {
+                            stringResource(R.string.page_label, index + 1)
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = if (isHome) {
                             MaterialTheme.colorScheme.primary
@@ -371,7 +390,11 @@ private fun PagesStrip(
             modifier = Modifier
                 .width(132.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .clickable(role = Role.Button, onClickLabel = "Add a page", onClick = onAddPage)
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = stringResource(R.string.a11y_add_page),
+                    onClick = onAddPage,
+                )
                 .padding(vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -392,7 +415,7 @@ private fun PagesStrip(
                 )
             }
             Text(
-                text = "Add page",
+                text = stringResource(R.string.action_add_page),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -415,18 +438,21 @@ private fun SettingsTopBar(onBack: () -> Unit) {
             Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(50))
-                .clickable(onClickLabel = "Back", onClick = onBack),
+                .clickable(
+                    onClickLabel = stringResource(R.string.action_back),
+                    onClick = onBack,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.action_back),
                 tint = MaterialTheme.colorScheme.onBackground,
             )
         }
         Spacer(Modifier.width(6.dp))
         Text(
-            text = "Launcher settings",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -547,7 +573,7 @@ private fun SliderRow(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
-    label: (Float) -> String,
+    label: @Composable (Float) -> String,
     onChange: (Float) -> Unit,
 ) {
     Column(

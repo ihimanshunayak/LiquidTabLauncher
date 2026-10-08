@@ -73,12 +73,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.AppEntry
 import com.ihimanshunayak.liquidtab.data.AppRef
 import com.ihimanshunayak.liquidtab.data.FolderRef
@@ -153,7 +156,7 @@ fun FolderPanel(
 
             if (folder.items.isEmpty()) {
                 Text(
-                    text = "This folder is empty",
+                    text = stringResource(R.string.folder_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = glassContentColor().copy(alpha = 0.7f),
                     modifier = Modifier
@@ -192,7 +195,7 @@ fun FolderPanel(
 
             Spacer(Modifier.size(12.dp))
             Text(
-                text = "Long-press an app to take it out of the folder",
+                text = stringResource(R.string.folder_long_press_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = glassContentColor().copy(alpha = 0.55f),
                 modifier = Modifier.fillMaxWidth(),
@@ -245,11 +248,11 @@ private fun FolderHeader(
                 focusRequester.requestFocus()
                 keyboard?.show()
             }
-            TextAction(label = "Save", onClick = {
+            TextAction(label = stringResource(R.string.save), onClick = {
                 keyboard?.hide()
                 onCommit()
             })
-            TextAction(label = "Cancel", onClick = {
+            TextAction(label = stringResource(R.string.cancel), onClick = {
                 keyboard?.hide()
                 onCancel()
             })
@@ -263,7 +266,7 @@ private fun FolderHeader(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = if (count == 1) "1 app" else "$count apps",
+                    text = pluralStringResource(R.plurals.folder_app_count, count, count),
                     style = MaterialTheme.typography.labelSmall,
                     color = glassContentColor().copy(alpha = 0.65f),
                 )
@@ -277,7 +280,7 @@ private fun FolderHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Rename folder",
+                    contentDescription = stringResource(R.string.rename_folder),
                     tint = glassContentColor().copy(alpha = 0.85f),
                     modifier = Modifier.size(18.dp),
                 )
@@ -293,7 +296,7 @@ private fun FolderHeader(
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,
-                contentDescription = "Close folder",
+                contentDescription = stringResource(R.string.close_folder),
                 tint = glassContentColor().copy(alpha = 0.85f),
                 modifier = Modifier.size(18.dp),
             )
@@ -320,8 +323,8 @@ private fun FolderAppTile(
             // row stays its own node so it can still be reached on its own.
             .semantics(mergeDescendants = true) { contentDescription = label }
             .combinedClickable(
-                onClickLabel = "Open $label",
-                onLongClickLabel = "Remove $label from the folder",
+                onClickLabel = stringResource(R.string.a11y_open_app, label),
+                onLongClickLabel = stringResource(R.string.a11y_remove_from_folder, label),
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
@@ -363,7 +366,7 @@ private fun FolderAppTile(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.size(2.dp))
-        TextAction(label = "Info", onClick = onInfo)
+        TextAction(label = stringResource(R.string.app_info), onClick = onInfo)
     }
 }
 

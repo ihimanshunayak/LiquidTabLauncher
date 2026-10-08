@@ -37,7 +37,9 @@ import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
 import android.provider.CalendarContract
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.media.FreeMusicBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,10 +72,15 @@ sealed interface WidgetSource<out T> {
     data class Ready<T>(val value: T, val stale: Boolean = false) : WidgetSource<T>
 
     /**
-     * Nothing can be shown, and [reason] says what the user would have to change
-     * — a permission, a setting, or an absent app.
+     * Nothing can be shown, and [reasonRes] says what the user would have to
+     * change — a permission, a setting, or an absent app.
+     *
+     * Carried as a string resource rather than a String because this type is
+     * produced outside a composition, where there is no Context to resolve one.
+     * The widget resolves it at the point it draws, which is also what keeps
+     * the sentence in the user's language.
      */
-    data class Unavailable(val reason: String) : WidgetSource<Nothing>
+    data class Unavailable(@StringRes val reasonRes: Int) : WidgetSource<Nothing>
 }
 
 /**
@@ -98,7 +105,7 @@ object WeatherSource {
     /** Starts refreshing for [latitude], [longitude]; a no-op when already running for them. */
     fun start(latitude: Float, longitude: Float) {
         if (latitude == 0f && longitude == 0f) {
-            _state.value = WidgetSource.Unavailable("Set a city in Settings")
+            _state.value = WidgetSource.Unavailable(R.string.weather_reason_no_city)
             return
         }
         val key = latitude to longitude
@@ -115,7 +122,7 @@ object WeatherSource {
                     // A refresh that fails keeps the last reading and marks it,
                     // rather than blanking a widget the user is looking at.
                     held != null -> WidgetSource.Ready(held, stale = true)
-                    else -> WidgetSource.Unavailable("Forecast unavailable offline")
+                    else -> WidgetSource.Unavailable(R.string.weather_reason_offline)
                 }
                 delay(REFRESH_MS)
             }
@@ -144,7 +151,7 @@ object CalendarSource {
         val appContext = context.applicationContext
         if (observer != null) return
         if (!CalendarRepository.hasPermission(appContext)) {
-            _state.value = WidgetSource.Unavailable("Grant calendar access in Settings")
+            _state.value = WidgetSource.Unavailable(R.string.calendar_reason_no_permission)
             return
         }
 
@@ -174,7 +181,7 @@ object CalendarSource {
     fun refresh(context: Context) {
         val appContext = context.applicationContext
         if (!CalendarRepository.hasPermission(appContext)) {
-            _state.value = WidgetSource.Unavailable("Grant calendar access in Settings")
+            _state.value = WidgetSource.Unavailable(R.string.calendar_reason_no_permission)
             return
         }
         scope.launch {

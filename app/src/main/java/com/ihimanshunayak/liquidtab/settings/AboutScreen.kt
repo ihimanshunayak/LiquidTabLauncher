@@ -52,6 +52,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.annotation.StringRes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,11 +63,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ihimanshunayak.liquidtab.BuildConfig
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
 import com.ihimanshunayak.liquidtab.util.isDefaultHome
 import com.ihimanshunayak.liquidtab.util.openDefaultHomeSettings
@@ -108,19 +111,29 @@ fun AboutScreen(
             }
 
             item {
-                AboutSection(title = "Build") {
-                    FactRow(label = "Version", value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                AboutSection(title = stringResource(R.string.about_section_build)) {
+                    FactRow(
+                        label = stringResource(R.string.about_label_version),
+                        value = stringResource(
+                            R.string.about_version_full,
+                            BuildConfig.VERSION_NAME,
+                            BuildConfig.VERSION_CODE,
+                        ),
+                    )
                     RowDivider()
-                    FactRow(label = "Built", value = BuildConfig.BUILD_DATE)
+                    FactRow(label = stringResource(R.string.about_label_built), value = BuildConfig.BUILD_DATE)
                     RowDivider()
-                    FactRow(label = "Package", value = BuildConfig.APPLICATION_ID)
+                    FactRow(label = stringResource(R.string.about_label_package), value = BuildConfig.APPLICATION_ID)
                     RowDivider()
-                    FactRow(label = "Design system", value = "FreeMusic Liquid Glass")
+                    FactRow(
+                        label = stringResource(R.string.about_label_design_system),
+                        value = stringResource(R.string.about_value_design_system),
+                    )
                 }
             }
 
             item {
-                AboutSection(title = "Is this the Home app?") {
+                AboutSection(title = stringResource(R.string.about_section_home)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -145,18 +158,18 @@ fun AboutScreen(
                         Column(Modifier.weight(1f)) {
                             Text(
                                 text = if (homeStatus.value) {
-                                    "Liquid Tab Launcher is your Home app"
+                                    stringResource(R.string.about_home_yes)
                                 } else {
-                                    "Another app is your Home app"
+                                    stringResource(R.string.about_home_no)
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 text = if (homeStatus.value) {
-                                    "Pressing Home opens this launcher."
+                                    stringResource(R.string.about_home_yes_body)
                                 } else {
-                                    "Choose Liquid Tab Launcher to make it Home."
+                                    stringResource(R.string.about_home_no_body)
                                 },
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -166,11 +179,11 @@ fun AboutScreen(
                     if (!homeStatus.value) {
                         RowDivider()
                         NavRow(
-                            title = "Choose Home app",
-                            subtitle = "Opens Android's own Home-screen settings",
+                            title = stringResource(R.string.about_choose_home),
+                            subtitle = stringResource(R.string.about_choose_home_summary),
                             onClick = {
                                 if (openDefaultHomeSettings(context)) homeStatus.value = isDefaultHome(context)
-                                else toast(context, "This device has no Home-app setting")
+                                else toast(context, context.getString(R.string.toast_no_home_setting))
                             },
                         )
                     }
@@ -178,25 +191,31 @@ fun AboutScreen(
             }
 
             item {
-                AboutSection(title = "Device") {
-                    FactRow(label = "Android", value = Build.VERSION.RELEASE)
+                AboutSection(title = stringResource(R.string.about_section_device)) {
+                    FactRow(label = stringResource(R.string.about_label_android), value = Build.VERSION.RELEASE)
                     RowDivider()
-                    FactRow(label = "API level", value = Build.VERSION.SDK_INT.toString())
+                    FactRow(label = stringResource(R.string.about_label_api), value = Build.VERSION.SDK_INT.toString())
                     RowDivider()
-                    FactRow(label = "Device", value = "${Build.MANUFACTURER} ${Build.MODEL}".trim())
+                    FactRow(
+                        label = stringResource(R.string.about_label_device),
+                        value = "${Build.MANUFACTURER} ${Build.MODEL}".trim(),
+                    )
                     RowDivider()
-                    FactRow(label = "Screens", value = "Tablet layout, portrait and landscape")
+                    FactRow(
+                        label = stringResource(R.string.about_label_screens),
+                        value = stringResource(R.string.about_value_screens),
+                    )
                 }
             }
 
             item {
-                AboutSection(title = "Open source") {
+                AboutSection(title = stringResource(R.string.about_section_open_source)) {
                     NavRow(
-                        title = "Show software notices",
+                        title = stringResource(R.string.about_show_notices),
                         subtitle = if (showNotices) {
-                            "The licences of everything running inside this app"
+                            stringResource(R.string.about_show_notices_open)
                         } else {
-                            "Backdrop, Compose, Media3, Coil and their licences"
+                            stringResource(R.string.about_show_notices_closed)
                         },
                         onClick = { showNotices = !showNotices },
                     )
@@ -208,13 +227,19 @@ fun AboutScreen(
             }
 
             item {
-                AboutSection(title = "Credits") {
-                    FactRow(label = "Built by", value = "A'nil Cyborg")
+                AboutSection(title = stringResource(R.string.about_section_credits)) {
+                    FactRow(
+                        label = stringResource(R.string.about_label_built_by),
+                        value = stringResource(R.string.about_value_built_by),
+                    )
                     RowDivider()
-                    FactRow(label = "Studio", value = "A|iens")
+                    FactRow(
+                        label = stringResource(R.string.about_label_studio),
+                        value = stringResource(R.string.about_value_studio),
+                    )
                     RowDivider()
                     LinkRow(
-                        label = "Project",
+                        label = stringResource(R.string.about_label_project),
                         value = PROJECT_URL,
                         onClick = {
                             context.startActivity(
@@ -228,9 +253,7 @@ fun AboutScreen(
 
             item {
                 Text(
-                    text = "Liquid Tab Launcher turns the FreeMusic design system into a " +
-                        "tablet Home screen. No accounts, no telemetry, no network calls " +
-                        "you did not ask for.",
+                    text = stringResource(R.string.about_footer),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -259,18 +282,21 @@ private fun AboutTopBar(onBack: () -> Unit) {
             Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(50))
-                .clickable(onClickLabel = "Back", onClick = onBack),
+                .clickable(
+                    onClickLabel = stringResource(R.string.action_back),
+                    onClick = onBack,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.action_back),
                 tint = MaterialTheme.colorScheme.onBackground,
             )
         }
         Spacer(Modifier.width(6.dp))
         Text(
-            text = "About",
+            text = stringResource(R.string.about_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -290,14 +316,14 @@ private fun AboutHeader() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Liquid Tab Launcher",
+            text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "A liquid glass Home screen for tablets",
+            text = stringResource(R.string.about_tagline),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -311,7 +337,7 @@ private fun AboutHeader() {
                 .padding(horizontal = 14.dp, vertical = 6.dp),
         ) {
             Text(
-                text = "Version ${BuildConfig.VERSION_NAME}",
+                text = stringResource(R.string.about_version_short, BuildConfig.VERSION_NAME),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -337,11 +363,16 @@ private fun AboutSection(
  */
 @Composable
 private fun NoticeBlock() {
+    // Resolved outside the semantics block: the block is a snapshot lambda, not
+    // a composable scope, so a stringResource call inside it would not compile.
+    val noticesDescription = stringResource(R.string.about_software_notices)
     Column(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
-            .semantics { contentDescription = "Software notices" },
+            .semantics(mergeDescendants = true) {
+                contentDescription = noticesDescription
+            },
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         NOTICES.forEach { notice ->
@@ -357,23 +388,33 @@ private fun NoticeBlock() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = notice.role,
+                    text = stringResource(notice.roleRes),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         Text(
-            text = "Apache-2.0 text: apache.org/licenses/LICENSE-2.0 · " +
-                "Vendored notice files are kept alongside the sources they cover.",
+            text = stringResource(R.string.about_licence_footer),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
-/** One dependency, its licence, and why the launcher needs it. */
-private data class Notice(val name: String, val licence: String, val role: String)
+/**
+ * One dependency, its licence, and why the launcher needs it.
+ *
+ * [name] and [licence] stay as literals: a licence is attributed under the name
+ * and identifier it was granted under, and a translated component name or an
+ * altered licence identifier would misstate the grant. Only [roleRes] — the
+ * sentence explaining why the dependency is here — is localised.
+ */
+private data class Notice(
+    val name: String,
+    val licence: String,
+    @StringRes val roleRes: Int,
+)
 
 /**
  * What is actually compiled into this app. Each entry corresponds to a real
@@ -384,26 +425,26 @@ private val NOTICES = listOf(
     Notice(
         name = "backdrop — Kyant0",
         licence = "Apache License 2.0 · Copyright 2025 Kyant0",
-        role = "The blur and refraction engine behind every glass surface",
+        roleRes = R.string.notice_role_backdrop,
     ),
     Notice(
         name = "Jetpack Compose",
         licence = "Apache License 2.0 · Copyright The Android Open Source Project",
-        role = "The UI toolkit the launcher, settings and widgets are written in",
+        roleRes = R.string.notice_role_compose,
     ),
     Notice(
         name = "AndroidX Media3",
         licence = "Apache License 2.0 · Copyright The Android Open Source Project",
-        role = "The session client that reads what FreeMusic is playing",
+        roleRes = R.string.notice_role_media3,
     ),
     Notice(
         name = "Coil",
         licence = "Apache License 2.0 · Copyright Coil Contributors",
-        role = "Artwork loading for the Now Playing widget and wallpapers",
+        roleRes = R.string.notice_role_coil,
     ),
     Notice(
         name = "Kotlin & kotlinx.coroutines, kotlinx.serialization",
         licence = "Apache License 2.0 · Copyright JetBrains s.r.o. and contributors",
-        role = "The language, and the concurrency and JSON persistence layers",
+        roleRes = R.string.notice_role_kotlin,
     ),
 )

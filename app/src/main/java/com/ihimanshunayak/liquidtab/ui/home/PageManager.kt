@@ -58,8 +58,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.LauncherStore
 import com.ihimanshunayak.liquidtab.data.Workspace
 import com.ihimanshunayak.liquidtab.data.WorkspaceItem
@@ -119,12 +121,12 @@ fun PageManager(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = "Pages",
+                        text = stringResource(R.string.pages_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = glassContentColor(),
                     )
                     Text(
-                        text = "Long-press a page to make it the Home page",
+                        text = stringResource(R.string.pages_long_press_hint),
                         style = MaterialTheme.typography.labelMedium,
                         color = glassContentColor().copy(alpha = 0.6f),
                     )
@@ -149,7 +151,7 @@ fun PageManager(
                         modifier = Modifier.size(18.dp),
                     )
                     Text(
-                        text = "Add page",
+                        text = stringResource(R.string.action_add_page),
                         style = MaterialTheme.typography.labelLarge,
                         color = glassContentColor(),
                     )
@@ -255,7 +257,7 @@ private fun PageCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.PushPin,
-                        contentDescription = "Home page",
+                        contentDescription = stringResource(R.string.a11y_page_is_home),
                         tint = glassContentColor(),
                         modifier = Modifier.size(14.dp),
                     )
@@ -271,7 +273,7 @@ private fun PageCard(
         ) {
             PageCardAction(
                 icon = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                label = "Move page $pageNumber left",
+                label = stringResource(R.string.a11y_move_page_left, pageNumber),
                 enabled = canMoveLeft,
                 onClick = onMoveLeft,
             )
@@ -285,13 +287,13 @@ private fun PageCard(
             )
             PageCardAction(
                 icon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                label = "Move page $pageNumber right",
+                label = stringResource(R.string.a11y_move_page_right, pageNumber),
                 enabled = canMoveRight,
                 onClick = onMoveRight,
             )
             PageCardAction(
                 icon = Icons.Rounded.Delete,
-                label = "Delete page $pageNumber",
+                label = stringResource(R.string.a11y_delete_page, pageNumber),
                 enabled = canDelete,
                 onClick = onDelete,
             )
@@ -309,7 +311,7 @@ private fun PageCard(
                     modifier = Modifier.size(12.dp),
                 )
                 Text(
-                    text = "Home page",
+                    text = stringResource(R.string.home_page_label),
                     style = MaterialTheme.typography.labelSmall,
                     color = glassContentColor().copy(alpha = 0.8f),
                     maxLines = 1,
@@ -378,7 +380,7 @@ internal fun PagePreview(
         }
         if (page.items.size > PREVIEW_CELLS) {
             Text(
-                text = "+${page.items.size - PREVIEW_CELLS} more",
+                text = stringResource(R.string.page_more_items, page.items.size - PREVIEW_CELLS),
                 style = MaterialTheme.typography.labelSmall,
                 color = glassContentColor().copy(alpha = 0.6f),
                 maxLines = 1,
@@ -386,7 +388,7 @@ internal fun PagePreview(
         }
         if (page.items.isEmpty()) {
             Text(
-                text = "Empty",
+                text = stringResource(R.string.label_empty),
                 style = MaterialTheme.typography.labelSmall,
                 color = glassContentColor().copy(alpha = 0.6f),
                 maxLines = 1,

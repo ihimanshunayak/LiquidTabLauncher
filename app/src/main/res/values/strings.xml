@@ -1,106 +1,305 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+        Every string the launcher draws. Kept in the order the screens are laid
+        out so a key can be found from the surface it belongs to.
+
+        Placeholders use positional arguments (%1$s) rather than bare %s: a
+        sentence whose nouns sit in a different order in another language can
+        then be translated without the caller having to change.
+    -->
+
     <string name="app_name">Liquid Tab Launcher</string>
-    <string name="settings_title">Launcher Settings</string>
+
+    <!-- Shared actions and values -->
+    <string name="action_open">Open</string>
+    <string name="action_open_settings">Open Settings</string>
+    <string name="action_add_page">Add page</string>
+    <string name="action_search">Search</string>
+    <string name="action_grant_access">Grant access</string>
+    <string name="action_open_freemusic">Open FreeMusic</string>
+    <string name="action_back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="app_info">App info</string>
+    <string name="remove_from_home">Remove from Home</string>
+    <string name="remove_folder">Remove folder</string>
+    <string name="add_widget">Add a widget</string>
+    <string name="reset_layout">Reset Home layout</string>
+    <string name="label_empty">Empty</string>
+    <string name="value_automatic">Automatic</string>
+    <string name="value_percent">%1$d%%</string>
+
+    <plurals name="value_columns">
+        <item quantity="one">%1$d column</item>
+        <item quantity="other">%1$d columns</item>
+    </plurals>
+
+    <plurals name="calendar_more_today">
+        <item quantity="one">%1$d more today</item>
+        <item quantity="other">%1$d more today</item>
+    </plurals>
+
+    <plurals name="folder_app_count">
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
+    </plurals>
+
+    <!-- Accessibility labels, announced rather than drawn -->
+    <string name="a11y_open_app">Open %1$s</string>
+    <string name="a11y_app_options">App options for %1$s</string>
+    <string name="a11y_app_and_package">%1$s, %2$s</string>
+
+    <!-- Welcome -->
+    <string name="welcome_is_home_body">This launcher is your Home app. Pressing Home opens it from anywhere.</string>
+    <string name="welcome_not_home_body">A tablet Home screen built on the FreeMusic liquid-glass design. Set it as your Home app to use it, or open it once to look around.</string>
+    <string name="welcome_set_home">Set as Home app</string>
+    <string name="welcome_go_home">Go to Home screen</string>
+    <string name="welcome_open_launcher">Open the launcher</string>
 
     <!-- Home -->
-    <string name="search_hint">Search apps</string>
-    <string name="app_library">All Apps</string>
+    <string name="settings_title">Launcher Settings</string>
+    <string name="open_your_apps">Open your apps</string>
+    <string name="home_empty">Home is empty</string>
+    <string name="a11y_go_to_page">Go to page %1$d</string>
+    <string name="toast_app_gone">That app is no longer installed</string>
+    <string name="toast_could_not_open">Could not open %1$s</string>
 
-    <!-- Customization -->
-    <string name="customize">Customize</string>
-    <string name="add_to_home">Add to Home</string>
-    <string name="remove_from_home">Remove from Home</string>
-    <string name="new_folder">New Folder</string>
-    <string name="rename_folder">Rename Folder</string>
-    <string name="folder_name">Folder name</string>
-    <string name="delete_folder">Delete Folder</string>
-    <string name="app_info">App info</string>
-    <string name="uninstall">Uninstall</string>
-    <string name="cancel">Cancel</string>
-    <string name="done">Done</string>
-    <string name="save">Save</string>
-    <string name="rename">Rename</string>
-    <string name="remove">Remove</string>
+    <!-- Folder panel -->
+    <string name="folder_empty">This folder is empty</string>
+    <string name="folder_long_press_hint">Long-press an app to take it out of the folder</string>
+    <string name="rename_folder">Rename folder</string>
+    <string name="close_folder">Close folder</string>
+    <string name="a11y_remove_from_folder">Remove %1$s from the folder</string>
 
-    <!-- Widgets -->
+    <!-- Page manager -->
+    <string name="pages_title">Pages</string>
+    <string name="pages_long_press_hint">Long-press a page to make it the Home page</string>
+    <string name="home_page_label">Home page</string>
+    <string name="a11y_page_is_home">Home page</string>
+    <string name="a11y_make_page_home">Make page %1$d the Home page</string>
+    <string name="a11y_add_page">Add a page</string>
+    <string name="a11y_move_page_left">Move page %1$d left</string>
+    <string name="a11y_move_page_right">Move page %1$d right</string>
+    <string name="a11y_delete_page">Delete page %1$d</string>
+    <string name="page_label_home">Page %1$d · Home</string>
+    <string name="page_label">Page %1$d</string>
+    <string name="page_more_items">+%1$d more</string>
+    <string name="toast_home_page_set">A Home press will open page %1$d</string>
+
+    <!-- Widget picker -->
+    <string name="widget_picker_title">Widgets</string>
+    <string name="widget_picker_subtitle">Added to the end of your last page</string>
+    <string name="a11y_close_widget_picker">Close widget picker</string>
+    <string name="a11y_add_widget">Add %1$s to Home</string>
+    <string name="a11y_remove_widget">Remove %1$s from Home</string>
+    <string name="a11y_add_widget_short">Add %1$s</string>
+    <string name="a11y_remove_widget_short">Remove %1$s</string>
+
+    <!-- Widgets: names, shown in the picker and as a page item's label -->
     <string name="widget_clock">Clock</string>
     <string name="widget_date">Date</string>
     <string name="widget_weather">Weather</string>
     <string name="widget_calendar">Calendar</string>
     <string name="widget_battery">Battery</string>
-    <string name="widget_now_playing">Now Playing</string>
-    <string name="widget_favorites">Favorite Apps</string>
-    <string name="widget_quick_actions">Quick Actions</string>
-    <string name="add_widget">Add widget</string>
-    <string name="remove_widget">Remove widget</string>
+    <string name="widget_now_playing">FreeMusic player</string>
+    <string name="widget_favorites">Favourite apps</string>
+    <string name="widget_quick_actions">Quick actions</string>
+
+    <!-- Widgets: one-line descriptions for the catalogue -->
+    <string name="widget_clock_summary">Time, updated on the minute</string>
+    <string name="widget_date_summary">Today\'s day and date</string>
+    <string name="widget_weather_summary">Current conditions for your city</string>
+    <string name="widget_calendar_summary">Today\'s events from the calendar provider</string>
+    <string name="widget_battery_summary">Charge level and whether it is charging</string>
+    <string name="widget_now_playing_summary">What FreeMusic is playing, with transport controls</string>
+    <string name="widget_favorites_summary">A shortcut strip for the apps you pinned to the dock</string>
+    <string name="widget_quick_actions_summary">Wi-Fi, Bluetooth, torch and Do not disturb</string>
+
+    <!-- Clock and date widgets -->
+    <string name="date_today">Today</string>
+    <string name="calendar_all_day">All day</string>
+
+    <!-- Battery widget -->
+    <string name="battery_unavailable">Battery unavailable</string>
+    <string name="battery_charging">Charging</string>
+    <string name="battery_on_battery">On battery</string>
+
+    <!-- Weather widget -->
+    <string name="weather_current_location">Current location</string>
+    <string name="weather_high_low">H %1$d°   L %2$d°</string>
+    <string name="weather_last_known">Last known reading</string>
+    <string name="weather_loading">Fetching forecast…</string>
+    <string name="weather_idle">Checking conditions…</string>
+
+    <!-- Weather conditions, keyed by WMO code -->
+    <string name="weather_clear">Clear</string>
+    <string name="weather_mainly_clear">Mainly clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_overcast">Overcast</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_freezing_drizzle">Freezing drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_freezing_rain">Freezing rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_snow_grains">Snow grains</string>
+    <string name="weather_rain_showers">Rain showers</string>
+    <string name="weather_snow_showers">Snow showers</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <string name="weather_thunderstorm_hail">Thunderstorm with hail</string>
+    <string name="weather_unknown">—</string>
+
+    <!-- Calendar widget -->
+    <string name="calendar_empty">Nothing scheduled today</string>
+    <string name="calendar_loading">Reading your schedule…</string>
+
+    <!-- Now playing widget and media transport -->
+    <string name="nothing_playing">Nothing playing</string>
+    <string name="now_playing_loading">Looking for a session…</string>
+    <string name="media_previous">Previous</string>
+    <string name="media_play">Play</string>
+    <string name="media_pause">Pause</string>
+    <string name="media_next">Next</string>
+
+    <!-- Favourites widget -->
+    <string name="favorites_empty">Pin a few apps to the dock to see them here</string>
+
+    <!-- Widget reasons: why a widget has nothing to show -->
+    <string name="weather_reason_no_city">Set a city in Settings</string>
+    <string name="weather_reason_offline">Forecast unavailable offline</string>
+    <string name="calendar_reason_no_permission">Grant calendar access in Settings</string>
+    <string name="music_reason_not_installed">FreeMusic is not installed</string>
+    <string name="music_reason_not_playing">Open FreeMusic to start playing</string>
 
     <!-- Control center -->
-    <string name="control_center">Control Center</string>
     <string name="wifi">Wi-Fi</string>
     <string name="bluetooth">Bluetooth</string>
-    <string name="airplane_mode">Airplane mode</string>
-    <string name="brightness">Brightness</string>
-    <string name="volume">Volume</string>
-    <string name="rotation_lock">Rotation lock</string>
-    <string name="battery">Battery</string>
-    <string name="flashlight">Flashlight</string>
-    <string name="do_not_disturb">Do Not Disturb</string>
+    <string name="flashlight">Torch</string>
+    <string name="do_not_disturb">Focus</string>
+    <string name="title_settings">Settings</string>
+    <string name="app_library">All apps</string>
 
-    <!-- Now playing -->
-    <string name="nothing_playing">Nothing playing</string>
-    <string name="open_free_music">Open Free Music</string>
+    <string name="tile_wifi_on">Wi-Fi on</string>
+    <string name="tile_wifi_settings">Wi-Fi settings</string>
+    <string name="tile_bluetooth_on">Bluetooth on</string>
+    <string name="tile_bluetooth_settings">Bluetooth settings</string>
+    <string name="tile_allow_bluetooth">Allow Bluetooth</string>
+    <string name="tile_allow_brightness">Allow brightness</string>
+    <string name="tile_dnd_on">Do not disturb on</string>
+    <string name="tile_torch_on">Torch on</string>
+    <string name="tile_rotation_locked">Rotation locked</string>
+    <string name="tile_auto_rotate">Auto-rotate</string>
+    <string name="ringer_silent">Silent</string>
+    <string name="ringer_vibrate">Vibrate</string>
+    <string name="ringer_sound">Sound</string>
 
-    <!-- Settings -->
+    <!-- Toasts from the control center -->
+    <string name="toast_no_torch">This device has no torch</string>
+    <string name="toast_torch_failed">Could not switch the torch</string>
+
+    <!-- App library -->
+    <string name="search_hint">Search apps</string>
+    <string name="library_empty">No apps installed</string>
+    <string name="library_no_match">No apps match \"%1$s\"</string>
+
+    <!-- Settings: sections -->
     <string name="section_appearance">Appearance</string>
-    <string name="section_home">Home Screen</string>
     <string name="section_dock">Dock</string>
-    <string name="section_library">App Library</string>
-    <string name="section_widgets">Widgets</string>
+    <string name="section_background">Background</string>
+    <string name="section_behaviour">Behaviour</string>
+    <string name="section_home_pages">Home pages</string>
     <string name="section_about">About</string>
-    <string name="setting_dark_mode">Dark mode</string>
-    <string name="setting_dark_mode_system">Follow system</string>
-    <string name="setting_dark_mode_light">Light</string>
-    <string name="setting_dark_mode_dark">Dark</string>
-    <string name="setting_glass">Liquid Glass</string>
-    <string name="setting_glass_summary">Frosted glass surfaces with blur and highlights</string>
+
+    <!-- Settings: appearance -->
+    <string name="setting_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="setting_glass">Liquid glass</string>
+    <string name="setting_glass_summary">Blurred, refractive surfaces over the Home background</string>
+    <string name="setting_glass_unsupported">Unavailable on this Android version — needs Android 12</string>
     <string name="setting_reduce_blur">Reduce dynamic blur</string>
-    <string name="setting_reduce_blur_summary">Fills glass surfaces solid instead of sampling the backdrop</string>
-    <string name="setting_grid_size">Grid columns</string>
+    <string name="setting_reduce_blur_summary">Fills glass surfaces solid instead of sampling behind them</string>
+    <string name="setting_show_labels">Show app names</string>
+    <string name="setting_show_labels_summary">Draws each shortcut\'s label under its icon</string>
     <string name="setting_icon_size">Icon size</string>
-    <string name="setting_show_labels">Show app labels</string>
-    <string name="setting_dock_size">Dock apps</string>
-    <string name="setting_show_clock_widget">Show clock</string>
-    <string name="setting_show_date_widget">Show date</string>
-    <string name="setting_show_weather_widget">Show weather</string>
-    <string name="setting_show_week_glance">Week glance</string>
-    <string name="setting_show_battery_widget">Show battery</string>
-    <string name="setting_show_now_playing">Show Free Music player</string>
-    <string name="setting_show_favorites">Show favorite apps</string>
-    <string name="setting_show_quick_actions">Show quick actions</string>
-    <string name="setting_wallpaper">Background</string>
-    <string name="setting_wallpaper_pick">Choose an image</string>
-    <string name="setting_wallpaper_default">Default gradient</string>
+    <string name="setting_grid_size">Grid columns</string>
+
+    <!-- Settings: dock -->
+    <string name="setting_dock_max">Maximum apps in the dock</string>
+
+    <!-- Settings: background -->
+    <string name="setting_wallpaper_source">Source</string>
+    <string name="wallpaper_gradient">Gradient</string>
+    <string name="wallpaper_photo">Photo</string>
+    <string name="wallpaper_now_playing">Now playing</string>
     <string name="setting_parallax">Parallax</string>
-    <string name="setting_animations">Animations</string>
-    <string name="setting_style">App style</string>
-    <string name="setting_library_style">App library style</string>
-    <string name="setting_columns">Columns</string>
-    <string name="setting_version">Version</string>
-    <string name="setting_default_home">Set as default Home app</string>
-    <string name="setting_default_home_summary">Android asks which Home app to use; choose Liquid Tab Launcher</string>
+    <string name="setting_parallax_summary">Moves the background slightly as pages change</string>
+    <string name="setting_parallax_strength">Parallax strength</string>
+
+    <!-- Settings: behaviour -->
+    <string name="setting_reduce_motion">Reduce motion</string>
+    <string name="setting_reduce_motion_summary">Drops the scale and lift animations during a drag</string>
+    <string name="setting_library_style">App library</string>
     <string name="style_list">List</string>
     <string name="style_grid">Grid</string>
-    <string name="close">Close</string>
-    <string name="reset_layout">Reset Home layout</string>
-    <string name="reset_layout_summary">Restores the default app order and removes all folders</string>
 
-    <!-- Search -->
-    <string name="search_section_apps">Applications</string>
-    <string name="search_section_actions">Actions</string>
-    <string name="search_no_results">No results</string>
+    <!-- Settings: pages -->
+    <string name="setting_show_page_indicator">Show page indicator</string>
+    <string name="setting_show_page_indicator_summary">Dots under the grid, each one a way to reach its page</string>
 
-    <!-- Widget picker -->
-    <string name="widget_picker_title">Add a widget</string>
-    <string name="widget_picker_subtitle">Drag a widget onto the Home screen, or tap to place it</string>
+    <!-- Settings: about row -->
+    <string name="setting_about_title">About Liquid Tab Launcher</string>
+    <string name="setting_about_summary">Version, device, Home status and software notices</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_tagline">A liquid glass Home screen for tablets</string>
+    <string name="about_version_short">Version %1$s</string>
+    <string name="about_version_full">Version %1$s (%2$d)</string>
+    <string name="about_section_build">Build</string>
+    <string name="about_section_home">Is this the Home app?</string>
+    <string name="about_section_device">Device</string>
+    <string name="about_section_open_source">Open source</string>
+    <string name="about_section_credits">Credits</string>
+    <string name="about_label_version">Version</string>
+    <string name="about_label_built">Built</string>
+    <string name="about_label_package">Package</string>
+    <string name="about_label_design_system">Design system</string>
+    <string name="about_label_android">Android</string>
+    <string name="about_label_api">API level</string>
+    <string name="about_label_device">Device</string>
+    <string name="about_label_screens">Screens</string>
+    <string name="about_label_built_by">Built by</string>
+    <string name="about_label_studio">Studio</string>
+    <string name="about_label_project">Project</string>
+    <string name="about_value_design_system">FreeMusic Liquid Glass</string>
+    <string name="about_value_screens">Tablet layout, portrait and landscape</string>
+    <string name="about_value_built_by">A\'nil Cyborg</string>
+    <string name="about_value_studio">A|iens</string>
+    <string name="about_home_yes">Liquid Tab Launcher is your Home app</string>
+    <string name="about_home_no">Another app is your Home app</string>
+    <string name="about_home_yes_body">Pressing Home opens this launcher.</string>
+    <string name="about_home_no_body">Choose Liquid Tab Launcher to make it Home.</string>
+    <string name="about_choose_home">Choose Home app</string>
+    <string name="about_choose_home_summary">Opens Android\'s own Home-screen settings</string>
+    <string name="toast_no_home_setting">This device has no Home-app setting</string>
+    <string name="about_show_notices">Show software notices</string>
+    <string name="about_show_notices_open">The licences of everything running inside this app</string>
+    <string name="about_show_notices_closed">Backdrop, Compose, Media3, Coil and their licences</string>
+    <string name="about_software_notices">Software notices</string>
+    <string name="about_footer">Liquid Tab Launcher turns the FreeMusic design system into a tablet Home screen. No accounts, no telemetry, no network calls you did not ask for.</string>
+    <string name="about_licence_footer">Apache-2.0 text: apache.org/licenses/LICENSE-2.0 · Vendored notice files are kept alongside the sources they cover.</string>
+
+    <!--
+        Software notice roles. The component names and licence identifiers stay
+        in NOTICES, in the file, because a licence is attributed under the name
+        it was granted under and translating it would misstate the grant.
+    -->
+    <string name="notice_role_backdrop">The blur and refraction engine behind every glass surface</string>
+    <string name="notice_role_compose">The UI toolkit the launcher, settings and widgets are written in</string>
+    <string name="notice_role_media3">The session client that reads what FreeMusic is playing</string>
+    <string name="notice_role_coil">Artwork loading for the Now Playing widget and wallpapers</string>
+    <string name="notice_role_kotlin">The language, and the concurrency and JSON persistence layers</string>
 </resources>

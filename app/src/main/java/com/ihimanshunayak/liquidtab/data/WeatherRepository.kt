@@ -24,6 +24,8 @@
 package com.ihimanshunayak.liquidtab.data
 
 import android.util.Log
+import androidx.annotation.StringRes
+import com.ihimanshunayak.liquidtab.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -41,8 +43,14 @@ data class Weather(
     val isDay: Boolean,
     val fetchedAtMs: Long,
 ) {
-    /** A short human description, from the WMO code Open-Meteo returns. */
-    val description: String get() = WeatherRepository.describe(weatherCode)
+    /**
+     * A short human description, from the WMO code Open-Meteo returns.
+     *
+     * A resource rather than the sentence: the code-to-words mapping belongs to
+     * the repository, the language it is written in belongs to the screen.
+     */
+    @get:StringRes
+    val descriptionRes: Int get() = WeatherRepository.describeRes(weatherCode)
 }
 
 /** A place the user can pick as their weather city. */
@@ -156,22 +164,23 @@ object WeatherRepository {
     }
 
     /** WMO weather interpretation codes, as Open-Meteo documents them. */
-    fun describe(code: Int): String = when (code) {
-        0 -> "Clear"
-        1 -> "Mainly clear"
-        2 -> "Partly cloudy"
-        3 -> "Overcast"
-        45, 48 -> "Fog"
-        51, 53, 55 -> "Drizzle"
-        56, 57 -> "Freezing drizzle"
-        61, 63, 65 -> "Rain"
-        66, 67 -> "Freezing rain"
-        71, 73, 75 -> "Snow"
-        77 -> "Snow grains"
-        80, 81, 82 -> "Rain showers"
-        85, 86 -> "Snow showers"
-        95 -> "Thunderstorm"
-        96, 99 -> "Thunderstorm with hail"
-        else -> "—"
+    @StringRes
+    fun describeRes(code: Int): Int = when (code) {
+        0 -> R.string.weather_clear
+        1 -> R.string.weather_mainly_clear
+        2 -> R.string.weather_partly_cloudy
+        3 -> R.string.weather_overcast
+        45, 48 -> R.string.weather_fog
+        51, 53, 55 -> R.string.weather_drizzle
+        56, 57 -> R.string.weather_freezing_drizzle
+        61, 63, 65 -> R.string.weather_rain
+        66, 67 -> R.string.weather_freezing_rain
+        71, 73, 75 -> R.string.weather_snow
+        77 -> R.string.weather_snow_grains
+        80, 81, 82 -> R.string.weather_rain_showers
+        85, 86 -> R.string.weather_snow_showers
+        95 -> R.string.weather_thunderstorm
+        96, 99 -> R.string.weather_thunderstorm_hail
+        else -> R.string.weather_unknown
     }
 }

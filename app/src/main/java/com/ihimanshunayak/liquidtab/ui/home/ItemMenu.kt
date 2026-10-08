@@ -49,8 +49,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.WorkspaceItem
 import com.ihimanshunayak.liquidtab.ui.glass.glassContentColor
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
@@ -100,21 +102,41 @@ fun ItemMenu(
             )
 
             if (item is WorkspaceItem.App) {
-                MenuRow(icon = Icons.AutoMirrored.Rounded.OpenInNew, label = "Open", onClick = onOpen)
-                MenuRow(icon = Icons.Rounded.Info, label = "App info", onClick = onAppInfo)
+                MenuRow(
+                    icon = Icons.AutoMirrored.Rounded.OpenInNew,
+                    label = stringResource(R.string.action_open),
+                    onClick = onOpen,
+                )
+                MenuRow(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(R.string.app_info),
+                    onClick = onAppInfo,
+                )
             }
 
             if (canRemove) {
                 MenuRow(
                     icon = Icons.Rounded.Delete,
-                    label = if (item is WorkspaceItem.Folder) "Remove folder" else "Remove from Home",
+                    label = if (item is WorkspaceItem.Folder) {
+                        stringResource(R.string.remove_folder)
+                    } else {
+                        stringResource(R.string.remove_from_home)
+                    },
                     onClick = onRemove,
                 )
             }
 
             Spacer(Modifier.height(4.dp))
-            MenuRow(icon = Icons.Rounded.Widgets, label = "Add a widget", onClick = onAddWidget)
-            MenuRow(icon = Icons.Rounded.Refresh, label = "Reset Home layout", onClick = onReset)
+            MenuRow(
+                icon = Icons.Rounded.Widgets,
+                label = stringResource(R.string.add_widget),
+                onClick = onAddWidget,
+            )
+            MenuRow(
+                icon = Icons.Rounded.Refresh,
+                label = stringResource(R.string.reset_layout),
+                onClick = onReset,
+            )
         }
     }
 }

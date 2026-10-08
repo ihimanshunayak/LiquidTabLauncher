@@ -52,8 +52,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.WidgetKind
 import com.ihimanshunayak.liquidtab.ui.glass.glassContentColor
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
@@ -96,12 +98,12 @@ fun WidgetPicker(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = "Widgets",
+                        text = stringResource(R.string.widget_picker_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = glassContentColor(),
                     )
                     Text(
-                        text = "Added to the end of your last page",
+                        text = stringResource(R.string.widget_picker_subtitle),
                         style = MaterialTheme.typography.labelSmall,
                         color = glassContentColor().copy(alpha = 0.65f),
                     )
@@ -110,12 +112,15 @@ fun WidgetPicker(
                     Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(50))
-                        .clickable(onClickLabel = "Close widget picker", onClick = onDismiss),
+                        .clickable(
+                            onClickLabel = stringResource(R.string.a11y_close_widget_picker),
+                            onClick = onDismiss,
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close widget picker",
+                        contentDescription = stringResource(R.string.a11y_close_widget_picker),
                         tint = glassContentColor().copy(alpha = 0.85f),
                         modifier = Modifier.size(18.dp),
                     )
@@ -157,9 +162,9 @@ private fun WidgetPickerRow(
             .background(glassContentColor().copy(alpha = 0.07f))
             .clickable(
                 onClickLabel = if (added) {
-                    "Remove ${kind.displayName()} from Home"
+                    stringResource(R.string.a11y_remove_widget, stringResource(kind.nameRes))
                 } else {
-                    "Add ${kind.displayName()} to Home"
+                    stringResource(R.string.a11y_add_widget, stringResource(kind.nameRes))
                 },
             ) { if (added) onRemove() else onAdd() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
@@ -168,13 +173,13 @@ private fun WidgetPickerRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                text = kind.displayName(),
+                text = stringResource(kind.nameRes),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = glassContentColor(),
             )
             Spacer(Modifier.size(2.dp))
             Text(
-                text = kind.summary(),
+                text = stringResource(kind.summaryRes),
                 style = MaterialTheme.typography.labelSmall,
                 color = glassContentColor().copy(alpha = 0.7f),
             )
@@ -196,9 +201,9 @@ private fun WidgetPickerRow(
             Icon(
                 imageVector = if (added) Icons.Rounded.Remove else Icons.Rounded.Add,
                 contentDescription = if (added) {
-                    "Remove ${kind.displayName()}"
+                    stringResource(R.string.a11y_remove_widget_short, stringResource(kind.nameRes))
                 } else {
-                    "Add ${kind.displayName()}"
+                    stringResource(R.string.a11y_add_widget_short, stringResource(kind.nameRes))
                 },
                 tint = if (added) {
                     MaterialTheme.colorScheme.error
@@ -211,26 +216,3 @@ private fun WidgetPickerRow(
     }
 }
 
-/** A widget's own name, spelled for a screen rather than for an enum. */
-fun WidgetKind.displayName(): String = when (this) {
-    WidgetKind.CLOCK -> "Clock"
-    WidgetKind.DATE -> "Date"
-    WidgetKind.WEATHER -> "Weather"
-    WidgetKind.CALENDAR -> "Calendar"
-    WidgetKind.BATTERY -> "Battery"
-    WidgetKind.NOW_PLAYING -> "FreeMusic player"
-    WidgetKind.FAVORITES -> "Favourite apps"
-    WidgetKind.QUICK_ACTIONS -> "Quick actions"
-}
-
-/** One line saying what the widget shows, so the catalogue is not a list of names. */
-private fun WidgetKind.summary(): String = when (this) {
-    WidgetKind.CLOCK -> "Time, updated on the minute"
-    WidgetKind.DATE -> "Today's day and date"
-    WidgetKind.WEATHER -> "Current conditions for your city"
-    WidgetKind.CALENDAR -> "Today's events, with the next one first"
-    WidgetKind.BATTERY -> "Charge level and charging state"
-    WidgetKind.NOW_PLAYING -> "What FreeMusic is playing, with controls"
-    WidgetKind.FAVORITES -> "Your dock and first-page apps"
-    WidgetKind.QUICK_ACTIONS -> "Wi-Fi, Bluetooth, torch and focus"
-}

@@ -19,6 +19,8 @@
 
 package com.ihimanshunayak.liquidtab.ui.home
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import com.ihimanshunayak.liquidtab.data.AppEntry
 import com.ihimanshunayak.liquidtab.data.Workspace
 import com.ihimanshunayak.liquidtab.data.WorkspaceItem
@@ -27,10 +29,11 @@ import com.ihimanshunayak.liquidtab.data.WorkspaceItem
  * The text for [item]: an app's name, a folder's name, or a widget's own name
  * spelled for a screen rather than for an enum.
  */
+@Composable
 fun itemLabel(item: WorkspaceItem, apps: Map<String, AppEntry>): String = when (item) {
     is WorkspaceItem.App -> apps[item.ref.key]?.label ?: item.ref.packageName
     is WorkspaceItem.Folder -> item.folder.name
-    is WorkspaceItem.Widget -> item.kind.displayName()
+    is WorkspaceItem.Widget -> stringResource(item.kind.nameRes)
 }
 
 /**
@@ -39,7 +42,11 @@ fun itemLabel(item: WorkspaceItem, apps: Map<String, AppEntry>): String = when (
  *
  * Dock items are included: a page preview does not show the dock, but a caller
  * that does (a folder sheet, a future overview) should not need a second map.
+ *
+ * Composable because a widget's label is a resource; the app and folder labels
+ * are data and cost nothing extra to resolve here.
  */
+@Composable
 fun workspaceLabels(workspace: Workspace, apps: Map<String, AppEntry>): Map<String, String> {
     val labels = HashMap<String, String>()
     workspace.pages.forEach { page ->

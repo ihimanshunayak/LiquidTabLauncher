@@ -14,6 +14,9 @@
 
 package com.ihimanshunayak.liquidtab.data
 
+import android.os.UserHandle
+import androidx.annotation.StringRes
+import com.ihimanshunayak.liquidtab.R
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -28,6 +31,38 @@ enum class WidgetKind {
     NOW_PLAYING,
     FAVORITES,
     QUICK_ACTIONS,
+    ;
+
+    /**
+     * The widget's name as a screen spells it, and the one line saying what it
+     * shows. Held here rather than in the picker so a widget's name cannot
+     * disagree between the catalogue, a page item's label and the About notice.
+     */
+    @get:StringRes
+    val nameRes: Int
+        get() = when (this) {
+            CLOCK -> R.string.widget_clock
+            DATE -> R.string.widget_date
+            WEATHER -> R.string.widget_weather
+            CALENDAR -> R.string.widget_calendar
+            BATTERY -> R.string.widget_battery
+            NOW_PLAYING -> R.string.widget_now_playing
+            FAVORITES -> R.string.widget_favorites
+            QUICK_ACTIONS -> R.string.widget_quick_actions
+        }
+
+    @get:StringRes
+    val summaryRes: Int
+        get() = when (this) {
+            CLOCK -> R.string.widget_clock_summary
+            DATE -> R.string.widget_date_summary
+            WEATHER -> R.string.widget_weather_summary
+            CALENDAR -> R.string.widget_calendar_summary
+            BATTERY -> R.string.widget_battery_summary
+            NOW_PLAYING -> R.string.widget_now_playing_summary
+            FAVORITES -> R.string.widget_favorites_summary
+            QUICK_ACTIONS -> R.string.widget_quick_actions_summary
+        }
 }
 
 /** A launchable activity: the app's package and its main activity class. */

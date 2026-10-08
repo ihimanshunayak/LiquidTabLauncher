@@ -73,11 +73,13 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ihimanshunayak.liquidtab.LiquidTabApp
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.AppEntry
 import com.ihimanshunayak.liquidtab.data.AppRef
 import com.ihimanshunayak.liquidtab.data.LauncherSettings
@@ -236,7 +238,7 @@ fun HomeScreen(
     fun open(ref: AppRef) {
         if (launchApp(context, ref)) return
         haptics.play(Haptic.ToggleOff)
-        toast(context, "That app is no longer installed")
+        toast(context, context.getString(R.string.toast_app_gone))
         // A dead shortcut that survives a relaunch is worse than one that is
         // gone, so the correction is immediate rather than deferred to the next
         // package broadcast.
@@ -427,7 +429,7 @@ fun HomeScreen(
         }
 
         if (showPageManager) {
-            val labels = remember(workspace, installedApps) { workspaceLabels(workspace, installedApps) }
+            val labels = workspaceLabels(workspace, installedApps)
             PageManager(
                 workspace = workspace,
                 labels = labels,
@@ -524,7 +526,7 @@ private fun EmptyHomeHint(
             modifier = Modifier.size(18.dp),
         )
         Text(
-            text = "Open your apps",
+            text = stringResource(R.string.open_your_apps),
             style = MaterialTheme.typography.labelLarge,
             color = glassContentColor(),
         )
@@ -598,7 +600,7 @@ private fun WorkspacePager(
     if (workspace.pages.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = "Home is empty",
+                text = stringResource(R.string.home_empty),
                 style = MaterialTheme.typography.titleMedium,
                 color = glassContentColor().copy(alpha = 0.6f),
             )
@@ -692,7 +694,7 @@ private fun PageIndicator(
                     .clip(CircleShape)
                     .clickable(
                         role = Role.Button,
-                        onClickLabel = "Go to page ${index + 1}",
+                        onClickLabel = stringResource(R.string.a11y_go_to_page, index + 1),
                         onClick = { onGoToPage(index) },
                     ),
                 contentAlignment = Alignment.Center,

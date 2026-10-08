@@ -56,8 +56,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.ui.glass.glassContentColor
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -106,7 +108,11 @@ fun ControlCenter(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.Wifi,
-                    label = if (controls.wifiEnabled) "Wi-Fi on" else "Wi-Fi settings",
+                    label = if (controls.wifiEnabled) {
+                        stringResource(R.string.tile_wifi_on)
+                    } else {
+                        stringResource(R.string.tile_wifi_settings)
+                    },
                     active = controls.wifiEnabled,
                     onClick = { controls.openWifiSettings() },
                     modifier = Modifier.weight(1f),
@@ -114,9 +120,9 @@ fun ControlCenter(
                 ControlTile(
                     icon = Icons.AutoMirrored.Rounded.VolumeUp,
                     label = when (controls.ringerMode) {
-                        0 -> "Silent"
-                        1 -> "Vibrate"
-                        else -> "Sound"
+                        0 -> stringResource(R.string.ringer_silent)
+                        1 -> stringResource(R.string.ringer_vibrate)
+                        else -> stringResource(R.string.ringer_sound)
                     },
                     active = controls.ringerMode != 0,
                     onClick = { controls.cycleRinger() },
@@ -128,9 +134,9 @@ fun ControlCenter(
                 ControlTile(
                     icon = Icons.Rounded.Bluetooth,
                     label = when {
-                        controls.bluetoothNeedsPermission -> "Allow Bluetooth"
-                        controls.bluetoothEnabled -> "Bluetooth on"
-                        else -> "Bluetooth settings"
+                        controls.bluetoothNeedsPermission -> stringResource(R.string.tile_allow_bluetooth)
+                        controls.bluetoothEnabled -> stringResource(R.string.tile_bluetooth_on)
+                        else -> stringResource(R.string.tile_bluetooth_settings)
                     },
                     active = controls.bluetoothEnabled,
                     onClick = {
@@ -148,7 +154,11 @@ fun ControlCenter(
                 )
                 ControlTile(
                     icon = Icons.Rounded.NotificationsOff,
-                    label = if (controls.dndEnabled) "Do not disturb on" else "Do not disturb",
+                    label = if (controls.dndEnabled) {
+                        stringResource(R.string.tile_dnd_on)
+                    } else {
+                        stringResource(R.string.do_not_disturb)
+                    },
                     active = controls.dndEnabled,
                     onClick = { controls.toggleDnd() },
                     modifier = Modifier.weight(1f),
@@ -158,7 +168,11 @@ fun ControlCenter(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.FlashlightOn,
-                    label = if (controls.torchEnabled) "Torch on" else "Torch",
+                    label = if (controls.torchEnabled) {
+                        stringResource(R.string.tile_torch_on)
+                    } else {
+                        stringResource(R.string.flashlight)
+                    },
                     active = controls.torchEnabled,
                     enabled = controls.torchAvailable,
                     onClick = { controls.toggleTorch() },
@@ -166,7 +180,11 @@ fun ControlCenter(
                 )
                 ControlTile(
                     icon = Icons.Rounded.ScreenRotation,
-                    label = if (controls.rotationLocked) "Rotation locked" else "Auto-rotate",
+                    label = if (controls.rotationLocked) {
+                        stringResource(R.string.tile_rotation_locked)
+                    } else {
+                        stringResource(R.string.tile_auto_rotate)
+                    },
                     active = controls.rotationLocked,
                     onClick = { controls.toggleRotationLock() },
                     modifier = Modifier.weight(1f),
@@ -176,7 +194,7 @@ fun ControlCenter(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.Settings,
-                    label = "Settings",
+                    label = stringResource(R.string.title_settings),
                     active = false,
                     onClick = onOpenSettings,
                     modifier = Modifier.weight(1f),
@@ -184,7 +202,7 @@ fun ControlCenter(
                 if (controls.brightnessNeedsPermission) {
                     ControlTile(
                         icon = Icons.Rounded.Brightness6,
-                        label = "Allow brightness",
+                        label = stringResource(R.string.tile_allow_brightness),
                         active = false,
                         // The window-level write already applied, so this tile
                         // is about making the change device-wide rather than
@@ -195,7 +213,7 @@ fun ControlCenter(
                 } else {
                     ControlTile(
                         icon = Icons.Rounded.Apps,
-                        label = "All apps",
+                        label = stringResource(R.string.app_library),
                         active = false,
                         onClick = onOpenLibrary,
                         modifier = Modifier.weight(1f),
@@ -227,14 +245,14 @@ fun ControlCenter(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.Search,
-                    label = "Search",
+                    label = stringResource(R.string.action_search),
                     active = false,
                     onClick = onOpenSearch,
                     modifier = Modifier.weight(1f),
                 )
                 ControlTile(
                     icon = Icons.Rounded.Apps,
-                    label = "All apps",
+                    label = stringResource(R.string.app_library),
                     active = false,
                     onClick = onOpenLibrary,
                     modifier = Modifier.weight(1f),

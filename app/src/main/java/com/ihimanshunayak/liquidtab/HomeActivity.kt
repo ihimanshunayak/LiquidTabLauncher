@@ -380,7 +380,10 @@ private fun LibrarySurface(
                 if (launchApp(context, entry.ref)) {
                     onClose()
                 } else {
-                    com.ihimanshunayak.liquidtab.util.toast(context, "Could not open ${entry.label}")
+                    com.ihimanshunayak.liquidtab.util.toast(
+                        context,
+                        context.getString(R.string.toast_could_not_open, entry.label),
+                    )
                 }
             },
             onLongPress = { entry ->

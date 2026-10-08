@@ -57,9 +57,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.AppEntry
 import com.ihimanshunayak.liquidtab.data.LauncherSettings
 import com.ihimanshunayak.liquidtab.data.LibraryStyle
@@ -110,7 +112,11 @@ fun AppLibrary(
         if (results.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = if (query.isBlank()) "No apps installed" else "No apps match \"$query\"",
+                    text = if (query.isBlank()) {
+                        stringResource(R.string.library_empty)
+                    } else {
+                        stringResource(R.string.library_no_match, query)
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     color = glassContentColor().copy(alpha = 0.6f),
                 )
@@ -179,7 +185,7 @@ private fun SearchField(
         Box(Modifier.weight(1f)) {
             if (query.isEmpty()) {
                 Text(
-                    text = "Search apps",
+                    text = stringResource(R.string.search_hint),
                     style = MaterialTheme.typography.bodyLarge,
                     color = glassContentColor().copy(alpha = 0.5f),
                 )
@@ -211,18 +217,25 @@ private fun LibraryRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
+    val rowDescription = stringResource(
+        R.string.a11y_app_and_package,
+        entry.label,
+        entry.packageName,
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             // One node per row: the plate, label and package name are one tap
             // target, so a reader should stop once and announce them together.
+            // The description is resolved before the block: a semantics block is
+            // a snapshot lambda, not a composable scope.
             .semantics(mergeDescendants = true) {
-                contentDescription = "${entry.label}, ${entry.packageName}"
+                contentDescription = rowDescription
             }
             .combinedClickable(
-                onClickLabel = "Open ${entry.label}",
-                onLongClickLabel = "App options for ${entry.label}",
+                onClickLabel = stringResource(R.string.a11y_open_app, entry.label),
+                onLongClickLabel = stringResource(R.string.a11y_app_options, entry.label),
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
@@ -273,8 +286,8 @@ private fun LibraryTile(
             .clip(RoundedCornerShape(18.dp))
             .semantics(mergeDescendants = true) { contentDescription = entry.label }
             .combinedClickable(
-                onClickLabel = "Open ${entry.label}",
-                onLongClickLabel = "App options for ${entry.label}",
+                onClickLabel = stringResource(R.string.a11y_open_app, entry.label),
+                onLongClickLabel = stringResource(R.string.a11y_app_options, entry.label),
                 onClick = onClick,
                 onLongClick = onLongClick,
             )

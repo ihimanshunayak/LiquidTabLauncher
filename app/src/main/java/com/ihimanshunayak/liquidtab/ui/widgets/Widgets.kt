@@ -72,11 +72,14 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.SubcomposeAsyncImage
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.AppEntry
 import com.ihimanshunayak.liquidtab.data.CalendarRepository
 import com.ihimanshunayak.liquidtab.data.CalendarSource
@@ -255,9 +258,9 @@ fun BatteryWidget() {
             )
             Text(
                 text = when {
-                    level !in 0..100 -> "Battery unavailable"
-                    charging -> "Charging"
-                    else -> "On battery"
+                    level !in 0..100 -> stringResource(R.string.battery_unavailable)
+                    charging -> stringResource(R.string.battery_charging)
+                    else -> stringResource(R.string.battery_on_battery)
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = glassContentColor().copy(alpha = 0.72f),
@@ -310,27 +313,35 @@ fun WeatherWidget() {
                             color = glassContentColor(),
                         )
                         Text(
-                            text = if (city.isBlank()) "Current location" else city,
+                            text = if (city.isBlank()) {
+                                stringResource(R.string.weather_current_location)
+                            } else {
+                                city
+                            },
                             style = MaterialTheme.typography.labelMedium,
                             color = glassContentColor().copy(alpha = 0.72f),
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = weather.description,
+                            text = stringResource(weather.descriptionRes),
                             style = MaterialTheme.typography.titleSmall,
                             color = glassContentColor(),
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = "H ${weather.highC.roundToInt()}°   L ${weather.lowC.roundToInt()}°",
+                            text = stringResource(
+                                R.string.weather_high_low,
+                                weather.highC.roundToInt(),
+                                weather.lowC.roundToInt(),
+                            ),
                             style = MaterialTheme.typography.labelMedium,
                             color = glassContentColor().copy(alpha = 0.7f),
                         )
                         if (current.stale) {
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                text = "Last known reading",
+                                text = stringResource(R.string.weather_last_known),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = glassContentColor().copy(alpha = 0.55f),
                             )
@@ -339,24 +350,32 @@ fun WeatherWidget() {
                 }
             }
 
-            is WidgetSource.Loading -> WidgetMessage("Weather", "Fetching forecast…")
+            is WidgetSource.Loading -> WidgetMessage(
+                stringResource(R.string.widget_weather),
+                stringResource(R.string.weather_loading),
+            )
 
             is WidgetSource.Unavailable -> WidgetMessage(
-                title = if (city.isBlank()) "Weather" else city,
-                body = current.reason,
-                action = if (city.isNotBlank() || latitude == 0f) "Open Settings" to {
-                    context.startActivity(
-                        android.content.Intent(
-                            context,
-                            com.ihimanshunayak.liquidtab.settings.SettingsActivity::class.java,
-                        ),
-                    )
+                title = if (city.isBlank()) stringResource(R.string.widget_weather) else city,
+                body = stringResource(current.reasonRes),
+                action = if (city.isNotBlank() || latitude == 0f) {
+                    stringResource(R.string.action_open_settings) to {
+                        context.startActivity(
+                            Intent(
+                                context,
+                                com.ihimanshunayak.liquidtab.settings.SettingsActivity::class.java,
+                            ),
+                        )
+                    }
                 } else {
                     null
                 },
             )
 
-            is WidgetSource.Idle -> WidgetMessage("Weather", "Checking conditions…")
+            is WidgetSource.Idle -> WidgetMessage(
+                stringResource(R.string.widget_weather),
+                stringResource(R.string.weather_idle),
+            )
         }
     }
 }
@@ -383,12 +402,15 @@ fun CalendarWidget() {
             is WidgetSource.Ready -> {
                 val events = current.value
                 if (events.isEmpty()) {
-                    WidgetMessage("Calendar", "Nothing scheduled today")
+                    WidgetMessage(
+                        stringResource(R.string.widget_calendar),
+                        stringResource(R.string.calendar_empty),
+                    )
                 } else {
                     val next = events.first()
                     Column(Modifier.fillMaxWidth()) {
                         Text(
-                            text = "Today",
+                            text = stringResource(R.string.date_today),
                             style = MaterialTheme.typography.labelMedium,
                             color = glassContentColor().copy(alpha = 0.7f),
                         )
@@ -399,8 +421,12 @@ fun CalendarWidget() {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = if (next.allDay) "All day" else next.startTime(java.time.ZoneId.systemDefault())
-                                    .format(DateTimeFormatter.ofPattern("HH:mm")),
+                                text = if (next.allDay) {
+                                    stringResource(R.string.calendar_all_day)
+                                } else {
+                                    next.startTime(java.time.ZoneId.systemDefault())
+                                        .format(DateTimeFormatter.ofPattern("HH:mm"))
+                                },
                                 style = MaterialTheme.typography.titleSmall,
                                 color = glassContentColor(),
                             )
@@ -415,7 +441,11 @@ fun CalendarWidget() {
                         if (events.size > 1) {
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = if (events.size == 2) "1 more today" else "${events.size - 1} more today",
+                                text = pluralStringResource(
+                                    R.plurals.calendar_more_today,
+                                    events.size - 1,
+                                    events.size - 1,
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = glassContentColor().copy(alpha = 0.65f),
                             )
@@ -438,15 +468,18 @@ fun CalendarWidget() {
                     }
                 }
                 WidgetMessage(
-                    title = "Calendar",
-                    body = current.reason,
-                    action = "Grant access" to {
+                    title = stringResource(R.string.widget_calendar),
+                    body = stringResource(current.reasonRes),
+                    action = stringResource(R.string.action_grant_access) to {
                         permission.launch(CalendarRepository.PERMISSION)
                     },
                 )
             }
 
-            else -> WidgetMessage("Calendar", "Reading your schedule…")
+            else -> WidgetMessage(
+                stringResource(R.string.widget_calendar),
+                stringResource(R.string.calendar_loading),
+            )
         }
     }
 }
@@ -532,9 +565,9 @@ fun NowPlayingWidget() {
             }
 
             is WidgetSource.Unavailable -> WidgetMessage(
-                title = "Now playing",
-                body = current.reason,
-                action = "Open FreeMusic" to {
+                title = stringResource(R.string.widget_now_playing),
+                body = stringResource(current.reasonRes),
+                action = stringResource(R.string.action_open_freemusic) to {
                     val packageName = FreeMusicBridge.PACKAGES.firstOrNull { pkg ->
                         runCatching { context.packageManager.getLaunchIntentForPackage(pkg) }
                             .getOrNull() != null
@@ -547,7 +580,10 @@ fun NowPlayingWidget() {
                 },
             )
 
-            else -> WidgetMessage("Now playing", "Looking for a session…")
+            else -> WidgetMessage(
+                stringResource(R.string.widget_now_playing),
+                stringResource(R.string.now_playing_loading),
+            )
         }
     }
 }
@@ -584,11 +620,14 @@ fun FavoritesWidget() {
 
     WidgetPlate(height = 116) {
         if (favorites.isEmpty()) {
-            WidgetMessage("Favourites", "Pin a few apps to the dock to see them here")
+            WidgetMessage(
+                stringResource(R.string.widget_favorites),
+                stringResource(R.string.favorites_empty),
+            )
         } else {
             Column(Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Favourites",
+                    text = stringResource(R.string.widget_favorites),
                     style = MaterialTheme.typography.labelMedium,
                     color = glassContentColor().copy(alpha = 0.7f),
                 )
@@ -628,22 +667,22 @@ fun QuickActionsWidget() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             QuickActionChip(
-                label = "Wi-Fi",
+                label = stringResource(R.string.wifi),
                 active = controls.wifiEnabled,
                 onClick = { controls.openWifiSettings() },
             )
             QuickActionChip(
-                label = "Bluetooth",
+                label = stringResource(R.string.bluetooth),
                 active = controls.bluetoothEnabled,
                 onClick = { controls.openBluetoothSettings() },
             )
             QuickActionChip(
-                label = "Torch",
+                label = stringResource(R.string.flashlight),
                 active = controls.torchEnabled,
                 onClick = { controls.toggleTorch() },
             )
             QuickActionChip(
-                label = "Focus",
+                label = stringResource(R.string.do_not_disturb),
                 active = controls.dndEnabled,
                 onClick = { controls.toggleDnd() },
             )
@@ -754,13 +793,21 @@ private fun TransportControls(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TransportButton(Icons.Rounded.SkipPrevious, "Previous", onPrevious)
+        TransportButton(
+            Icons.Rounded.SkipPrevious,
+            stringResource(R.string.media_previous),
+            onPrevious,
+        )
         TransportButton(
             icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-            label = if (isPlaying) "Pause" else "Play",
+            label = if (isPlaying) {
+                stringResource(R.string.media_pause)
+            } else {
+                stringResource(R.string.media_play)
+            },
             onClick = onPlayPause,
         )
-        TransportButton(Icons.Rounded.SkipNext, "Next", onNext)
+        TransportButton(Icons.Rounded.SkipNext, stringResource(R.string.media_next), onNext)
     }
 }
 

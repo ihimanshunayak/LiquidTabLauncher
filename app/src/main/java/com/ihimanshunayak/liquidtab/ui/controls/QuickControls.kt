@@ -46,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.util.toast
 
 private const val TAG = "QuickControls"
@@ -281,7 +282,7 @@ class QuickControlsState(
     /** Toggles the torch through the camera service — a real setter. */
     fun toggleTorch() {
         val id = torchCameraId ?: run {
-            toast(context, "This device has no torch")
+            toast(context, context.getString(R.string.toast_no_torch))
             return
         }
         runCatching {
@@ -289,7 +290,7 @@ class QuickControlsState(
             torchEnabled = !torchEnabled
         }.onFailure {
             Log.w(TAG, "Torch toggle failed", it)
-            toast(context, "Could not switch the torch")
+            toast(context, context.getString(R.string.toast_torch_failed))
         }
     }
 

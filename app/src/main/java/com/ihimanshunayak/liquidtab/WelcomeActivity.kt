@@ -76,12 +76,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.data.LauncherSettings
 import com.ihimanshunayak.liquidtab.data.ThemeMode
 import com.ihimanshunayak.liquidtab.settings.SettingsActivity
@@ -131,7 +133,7 @@ class WelcomeActivity : ComponentActivity() {
                     isHome = isHome,
                     onSetHome = {
                         if (!openDefaultHomeSettings(activity)) {
-                            toast(activity, "This device has no Home-app setting")
+                            toast(activity, getString(R.string.toast_no_home_setting))
                         }
                         // Otherwise the prompt is now Android's; the resume
                         // observer above picks up whatever the user decided.
@@ -198,7 +200,7 @@ private fun WelcomeScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Liquid Tab Launcher",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
                 color = scheme.onBackground,
                 textAlign = TextAlign.Center,
@@ -208,10 +210,9 @@ private fun WelcomeScreen(
 
             Text(
                 text = if (isHome) {
-                    "This launcher is your Home app. Pressing Home opens it from anywhere."
+                    stringResource(R.string.welcome_is_home_body)
                 } else {
-                    "A tablet Home screen built on the FreeMusic liquid-glass design. " +
-                        "Set it as your Home app to use it, or open it once to look around."
+                    stringResource(R.string.welcome_not_home_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurfaceVariant,
@@ -228,7 +229,7 @@ private fun WelcomeScreen(
                 ) {
                     Icon(Icons.Rounded.Home, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text("Set as Home app")
+                    Text(stringResource(R.string.welcome_set_home))
                 }
                 Spacer(Modifier.height(10.dp))
             }
@@ -238,7 +239,13 @@ private fun WelcomeScreen(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (isHome) "Go to Home screen" else "Open the launcher")
+                Text(
+                    if (isHome) {
+                        stringResource(R.string.welcome_go_home)
+                    } else {
+                        stringResource(R.string.welcome_open_launcher)
+                    },
+                )
             }
 
             Spacer(Modifier.height(10.dp))
@@ -250,7 +257,7 @@ private fun WelcomeScreen(
             ) {
                 Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
-                Text("Launcher settings")
+                Text(stringResource(R.string.settings_title))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -261,7 +268,11 @@ private fun WelcomeScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    text = stringResource(
+                        R.string.about_version_full,
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.VERSION_CODE,
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = scheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
