@@ -1,10 +1,22 @@
 import java.time.LocalDate
+import java.util.Properties
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+/**
+ * Signing details, kept out of the repository in `keystore.properties`
+ * (see keystore.properties.example). Absent on a fresh checkout, in which case
+ * the release build still runs and simply comes out unsigned rather than
+ * failing — only whoever holds the key can produce a shippable APK.
+ */
+val signing = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
 }
 
 /**
@@ -41,16 +53,39 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        // Both halves have to be there, not just the properties file: it *names*
+        // the keystore rather than containing it, and both are gitignored
+        // separately, so a checkout can easily end up with the one and not the
+        // other. A signing config pointing at a keystore that is not on disk
+        // fails the release build outright at validateSigningRelease — which is
+        // exactly the failure the unsigned fallback exists to avoid, so the
+        // keystore has to be looked for rather than assumed.
+        val store = signing.getProperty("storeFile")?.let { rootProject.file(it) }
+        if (store != null && store.exists()) {
+            create("release") {
+                storeFile = store
+                storePassword = signing.getProperty("storePassword")
+                keyAlias = signing.getProperty("keyAlias")
+                keyPassword = signing.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // On for what it does to speed, not size: Compose is written to be
             // run through R8, and without it the whole UI runs measurably
-            // slower. Nothing is renamed, which also keeps crash reports readable.
+            // slower. Nothing is renamed (-dontobfuscate), which also keeps
+            // crash reports readable.
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Null without a keystore to sign with: the build then produces
+            // app-release-unsigned.apk instead of failing outright.
+            signingConfig = signingConfigs.findByName("release")
         }
         debug {
             // Separate package so a debug build never replaces an installed one.

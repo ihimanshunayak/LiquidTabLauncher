@@ -1,6 +1,16 @@
 # Add project specific ProGuard rules here.
 # For more details, see https://developer.android.com/guide/developing/tools/proguard.html
 
+# ── Optimization without renaming ─────────────────────────────────────────────
+#
+# R8 is on for what it does to Compose's speed, not for size, and the release
+# build is expected to keep every class name it was written with: a launcher's
+# crash reports and stack traces have to be readable without a mapping file in
+# hand, and the persisted-workspace rules below only make sense if names are
+# stable in the first place. The AGP defaults do not include this — obfuscation
+# is on unless it is switched off — so it is stated here rather than assumed.
+-dontobfuscate
+
 # Keep kotlinx.serialization generated serializers.
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**
