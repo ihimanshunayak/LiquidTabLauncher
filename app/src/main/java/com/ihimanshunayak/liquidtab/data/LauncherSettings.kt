@@ -101,6 +101,16 @@ object LauncherSettings {
 
     val reduceMotion = BoolSetting("reduce_motion", default = false)
 
+    /**
+     * Whether a first-run Home screen has ever been laid down.
+     *
+     * The seed is a one-time act, not a repair: without this the seed would run
+     * again the moment the user emptied their Home screen on purpose, and would
+     * keep coming back every time the app list changed. A user who wants the
+     * sample layout back can ask for it from Settings.
+     */
+    val homeSeeded = BoolSetting("home_seeded", default = false)
+
     val libraryStyle = EnumSetting(
         "library_style",
         LibraryStyle.LIST,
@@ -138,6 +148,7 @@ object LauncherSettings {
         parallax.load()
         wallpaperParallaxAmount.load()
         reduceMotion.load()
+        homeSeeded.load()
         libraryStyle.load()
         weatherCity.load()
         weatherLatitude.load()

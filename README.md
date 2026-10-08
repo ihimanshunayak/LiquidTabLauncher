@@ -196,6 +196,31 @@ closes whatever is on top — Control Center, the library, search — before it
 scrolls the grid back to the nominated page, so one press always unwinds one
 layer and the page move only happens on a bare Home screen.
 
+**A haptic is decoration; it must never be load-bearing.** Android's vibrate
+call throws `SecurityException` when `VIBRATE` is not declared — and a
+`SecurityException` thrown from a long-press handler lands on the main thread and
+takes the launcher down. Every long press in this app plays a haptic, so the
+missing permission turned "press and hold an icon" into a crash-to-home.
+
+Two fixes, deliberately layered: the manifest declares `VIBRATE`, and
+`HapticDevice.play` wraps the call in `runCatching` anyway. The permission is the
+correct fix; the catch is what keeps a vendor build that rejects a particular
+`VibrationEffect` from doing the same thing. Nothing that only makes a noise
+should be able to kill the screen the user is looking at.
+
+**A shortcut is matched by package, not by class.** An app update that renames its
+launcher activity is routine, and `launchApp` already re-resolves the class the
+moment the saved one fails. Pruning on the exact `package/activity` key would
+delete exactly those shortcuts on the user's behalf — so `pruneMissing` matches
+packages, and a rename is invisible instead of destructive.
+
+**Drop targets resolve through the cell, not through "the last page laid out".**
+`HorizontalPager` keeps the neighbouring pages composed, so both pages register
+their cells and whichever laid out most recently would otherwise win — a drop
+into a gap would land on the page the finger had already left. Each cell
+remembers its own page, and a folder icon answers as a folder wherever it sits,
+including in the dock.
+
 **Widgets never draw a zero.** Every widget state is one of idle, loading, ready
 (with a stale flag) or unavailable with a reason, so a widget says what it is
 waiting for rather than showing placeholder text.
@@ -220,6 +245,26 @@ runs and produces `app-release-unsigned.apk` rather than failing.
 `minSdk 26`, `targetSdk 36`, `compileSdk 37`. Real-time backdrop blur needs
 Android 12 (`RenderEffect`); below that the glass falls back to a translucent
 scrim and the settings screen says so.
+
+### Permissions
+
+Every one of these is used by a feature the user can point at, and the launcher
+runs fully without the optional ones:
+
+| Permission | Why | Optional |
+|---|---|---|
+| `VIBRATE` | The haptic on every long press | No — the call throws without it |
+| `INTERNET`, `ACCESS_NETWORK_STATE` | The weather widget | Yes |
+| `RECEIVE_BOOT_COMPLETED` | Re-read the clock and date after a reboot | Yes |
+| `READ_CALENDAR` | The calendar widget; asked in place from its own tile | Yes |
+| `BLUETOOTH_CONNECT` | Reading whether Bluetooth is on, from API 31 | Yes |
+| `ACCESS_WIFI_STATE` | Reading whether Wi-Fi is on | Yes |
+| `WRITE_SETTINGS` | Device-wide brightness and rotation lock | Yes |
+
+A runtime request for a permission that is **absent** from the manifest is
+answered with an immediate denial and no dialog — which is why `READ_CALENDAR`
+is declared even though nothing asks for it at launch. The widget's own "Grant
+access" button is the only ask, and it could never have succeeded without it.
 
 ### Glass on a device without a GPU
 
@@ -270,6 +315,9 @@ prepend the survivors. These are the rules that are cheap to get subtly wrong
 and expensive to notice late, so they are checked without a device.
 `WorkspaceJsonTest.kt` covers the persisted format — including the Home-page
 nomination and the recovery path for a payload this build cannot read.
+`CellRegistryTest.kt` covers drop-target resolution — which page a cell answers
+for, that a folder files rather than displaces, and that releasing over a gap
+resolves to nothing instead of guessing.
 
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest

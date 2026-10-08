@@ -85,12 +85,15 @@ import com.ihimanshunayak.liquidtab.data.LauncherStore
 import com.ihimanshunayak.liquidtab.data.WeatherSource
 import com.ihimanshunayak.liquidtab.data.WidgetKind
 import com.ihimanshunayak.liquidtab.data.WidgetSource
+import com.ihimanshunayak.liquidtab.data.WidgetSupport
 import com.ihimanshunayak.liquidtab.data.WorkspaceItem
 import com.ihimanshunayak.liquidtab.media.FreeMusicBridge
 import com.ihimanshunayak.liquidtab.ui.controls.rememberQuickControlsState
 import com.ihimanshunayak.liquidtab.ui.glass.glassContentColor
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
 import com.ihimanshunayak.liquidtab.util.launchApp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.LocalTime
@@ -421,27 +424,32 @@ fun CalendarWidget() {
                 }
             }
 
-            is WidgetSource.Unavailable -> WidgetMessage(
-                title = "Calendar",
-                body = current.reason,
-                action = "Grant access" to {
-                    (context as? android.app.Activity)?.let { activity ->
-                        androidx.core.app.ActivityCompat.requestPermissions(
-                            activity,
-                            CalendarRepository.PERMISSIONS,
-                            REQUEST_CALENDAR,
-                        )
+            is WidgetSource.Unavailable -> {
+                // A permission launcher rather than a bare requestPermissions
+                // call: the result is what re-reads the calendar, and without it
+                // a granted permission would leave the widget showing its empty
+                // state until the process restarted.
+                val permission = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission(),
+                ) { granted ->
+                    if (granted) {
+                        CalendarSource.start(context)
+                        WidgetSupport.refresh(context)
                     }
-                },
-            )
+                }
+                WidgetMessage(
+                    title = "Calendar",
+                    body = current.reason,
+                    action = "Grant access" to {
+                        permission.launch(CalendarRepository.PERMISSION)
+                    },
+                )
+            }
 
             else -> WidgetMessage("Calendar", "Reading your schedule…")
         }
     }
 }
-
-/** Request code for the calendar grant, kept here so the widget owns its own ask. */
-internal const val REQUEST_CALENDAR = 4101
 
 // ── Now playing ───────────────────────────────────────────────────────────────
 

@@ -274,7 +274,7 @@ class WorkspaceOpsTest {
         val start = WorkspaceOps.add(workspace(), "page-1", WorkspaceItem.App(a))
             .let { WorkspaceOps.add(it, "page-1", WorkspaceItem.App(b)) }
 
-        val result = WorkspaceOps.pruneMissing(start, setOf(a.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
         assertEquals(listOf(a), refsOf(pageItems(result, "page-1")))
     }
 
@@ -288,7 +288,7 @@ class WorkspaceOpsTest {
     @Test
     fun `pruneMissing keeps a folder that still has members`() {
         val start = WorkspaceOps.createFolder(workspace(), "page-1", "Two", listOf(a, b))
-        val result = WorkspaceOps.pruneMissing(start, setOf(a.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
         val folder = (pageItems(result, "page-1").first() as WorkspaceItem.Folder).folder
         assertEquals(listOf(a), folder.items)
     }
@@ -296,7 +296,7 @@ class WorkspaceOpsTest {
     @Test
     fun `pruneMissing drops dock shortcuts whose app is gone`() {
         val start = workspace(dock = apps(a, b))
-        val result = WorkspaceOps.pruneMissing(start, setOf(a.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
         assertEquals(listOf(WorkspaceItem.App(a)), result.dock)
     }
 
@@ -327,7 +327,7 @@ class WorkspaceOpsTest {
     @Test
     fun `pruneMissing leaves an already-correct workspace untouched`() {
         val start = WorkspaceOps.add(workspace(), "page-1", WorkspaceItem.App(a))
-        val result = WorkspaceOps.pruneMissing(start, setOf(a.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
         assertEquals(start, result)
     }
 
@@ -355,7 +355,7 @@ class WorkspaceOpsTest {
     fun `pruneMissing trims a folder rather than deleting it`() {
         val start = WorkspaceOps.createFolder(workspace(), "page-1", "Two", listOf(a, b))
         val folderId = (pageItems(start, "page-1").first() as WorkspaceItem.Folder).folder.id
-        val result = WorkspaceOps.pruneMissing(start, setOf(b.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(b.packageName))
         assertEquals(listOf(b), WorkspaceOps.folder(result, folderId)?.items)
         assertEquals(WorkspaceItem.Folder(WorkspaceOps.folder(result, folderId)!!), pageItems(result, "page-1").first())
     }
@@ -373,12 +373,25 @@ class WorkspaceOpsTest {
         val start = workspace(
             dock = listOf(WorkspaceItem.Folder(FolderRef("f-dock", "Docked", listOf(a, b)))),
         )
-        val result = WorkspaceOps.pruneMissing(start, setOf(a.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
         val folder = (result.dock.first() as WorkspaceItem.Folder).folder
         assertEquals(listOf(a), folder.items)
     }
 
     // -- lookups ---------------------------------------------------------------
+
+    @Test
+    fun `pruneMissing keeps a shortcut whose app renamed its activity`() {
+        // An app update that renames the launcher activity is routine. The
+        // shortcut still launches — launchApp re-resolves the class at tap time
+        // — so the prune must not remove it on the user's behalf.
+        val renamed = AppRef(a.packageName, "com.example.a.MainActivityV2")
+        val start = WorkspaceOps.add(workspace(), "page-1", WorkspaceItem.App(renamed))
+
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
+
+        assertEquals(start, result)
+    }
 
     @Test
     fun `contains finds an app inside a folder`() {
@@ -676,7 +689,7 @@ class WorkspaceOpsTest {
     fun `pruneMissing keeps a Home-page nomination that still resolves`() {
         val start = WorkspaceOps.add(workspace(), "page-1", WorkspaceItem.App(a))
             .let { WorkspaceOps.setDefaultPage(it, "page-1") }
-        val result = WorkspaceOps.pruneMissing(start, setOf(a.key))
+        val result = WorkspaceOps.pruneMissing(start, setOf(a.packageName))
         assertEquals("page-1", result.defaultPageId)
         assertEquals(start, result)
     }

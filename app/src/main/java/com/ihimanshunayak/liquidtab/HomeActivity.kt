@@ -42,17 +42,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.ihimanshunayak.liquidtab.data.LauncherSettings
 import com.ihimanshunayak.liquidtab.data.ThemeMode
 import com.ihimanshunayak.liquidtab.settings.SettingsActivity
@@ -205,6 +211,24 @@ private fun LauncherRoot(
 
     LaunchedEffect(Unit) { app.appRepository.refresh() }
 
+    // An app installed or uninstalled while the launcher was not on screen must
+    // appear without the user having to restart it, so the list is re-read every
+    // time Home comes back to the front. The repository's mutex collapses this
+    // with any scan already in flight, and a launcher that hides a freshly
+    // installed app until the process dies is indistinguishable from one that
+    // lost it.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val resumeScope = rememberCoroutineScope()
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                resumeScope.launch { app.appRepository.refresh() }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Back closes the topmost surface before the system handles it.
     BackHandler(enabled = showControls || surface != Surface.NONE) {
         when {
@@ -351,6 +375,7 @@ private fun LibrarySurface(
             apps = apps,
             query = query,
             onQueryChange = onQueryChange,
+            autofocus = autofocus,
             onOpen = { entry ->
                 if (launchApp(context, entry.ref)) {
                     onClose()
@@ -363,11 +388,5 @@ private fun LibrarySurface(
             },
             modifier = Modifier.fillMaxSize(),
         )
-    }
-
-    if (autofocus) {
-        // Focus is requested by the field itself once composed; nothing to do
-        // here beyond making the intent explicit.
-        LaunchedEffect(Unit) { }
     }
 }

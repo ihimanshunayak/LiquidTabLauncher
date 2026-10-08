@@ -33,8 +33,13 @@ android {
         // below that the glass falls back to a translucent scrim.
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        // 1.x: v1.0 was the first public tag, v1.1 the first signed release.
+        // 1.2 is the build that fixes the launch crash and adds the missing
+        // app-drawer entry point. versionCode must rise with every published
+        // release or Android silently refuses the update - reinstalling an APK
+        // with an equal versionCode is a no-op on most devices.
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
