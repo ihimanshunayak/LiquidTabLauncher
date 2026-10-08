@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -879,8 +880,12 @@ private fun QuickActionChip(
                     glassContentColor().copy(alpha = 0.10f)
                 },
             )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .clickable(onClickLabel = label, onClick = onClick)
+            // 12 dp vertical padding around a labelSmall line lands just under
+            // the 48 dp guidance, so the chip claims the minimum height itself
+            // rather than relying on the row's own content size.
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

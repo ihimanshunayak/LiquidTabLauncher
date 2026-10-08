@@ -29,6 +29,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -66,9 +67,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -103,6 +106,7 @@ fun HomeScreen(
     windowWidth: Dp,
     windowHeight: Dp,
     onOpenLibrary: () -> Unit = {},
+    homePressTick: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -118,6 +122,7 @@ fun HomeScreen(
     val showLabels by LauncherSettings.showLabels.state.collectAsStateWithLifecycle()
     val dockMax by LauncherSettings.dockMaxItems.state.collectAsStateWithLifecycle()
     val reduceMotion by LauncherSettings.reduceMotion.state.collectAsStateWithLifecycle()
+    val showPageIndicator by LauncherSettings.showPageIndicator.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
     val scope = rememberCoroutineScope()
 
@@ -172,6 +177,7 @@ fun HomeScreen(
     var menuTarget by remember { mutableStateOf<WorkspaceItem?>(null) }
     var openFolderId by remember { mutableStateOf<String?>(null) }
     var showWidgetPicker by remember { mutableStateOf(false) }
+    var showPageManager by remember { mutableStateOf(false) }
 
     // The folder currently open, read from the live workspace rather than held
     // as a copy: a folder that dissolves itself must close its own panel.
@@ -182,10 +188,28 @@ fun HomeScreen(
         if (openFolderId != null && openFolder == null) openFolderId = null
     }
 
-    val pagerState = rememberPagerState(pageCount = { workspace.pages.size.coerceAtLeast(1) })
+    val pagerState = rememberPagerState(
+        initialPage = workspace.defaultPageIndex(),
+        pageCount = { workspace.pages.size.coerceAtLeast(1) },
+    )
 
-    BackHandler(enabled = menuTarget != null || dragState.session != null || openFolder != null || showWidgetPicker) {
+    // A Home press while the launcher is already on screen comes back to the
+    // page the user nominated. The tick changes only when a press actually
+    // happens, so nothing scrolls merely because the workspace recomposed.
+    LaunchedEffect(homePressTick, workspace.defaultPageId) {
+        if (homePressTick == 0) return@LaunchedEffect
+        val target = workspace.defaultPageIndex()
+        if (pagerState.currentPage != target) {
+            pagerState.animateScrollToPage(target)
+        }
+    }
+
+    BackHandler(
+        enabled = menuTarget != null || dragState.session != null || openFolder != null ||
+            showWidgetPicker || showPageManager,
+    ) {
         when {
+            showPageManager -> showPageManager = false
             showWidgetPicker -> showWidgetPicker = false
             openFolder != null -> openFolderId = null
             menuTarget != null -> menuTarget = null
@@ -204,7 +228,24 @@ fun HomeScreen(
         LauncherStore.update { WorkspaceOps.remove(it, WorkspaceItem.App(ref).key) }
     }
 
-    BoxWithConstraints(modifier.fillMaxSize()) {
+    BoxWithConstraints(
+        modifier
+            .fillMaxSize()
+            .pointerInput(registry) {
+                // A long press that lands on an icon belongs to that icon — the
+                // press-and-hold drag picks it up. Only a press on empty space
+                // opens the page manager, and the registry is what tells the two
+                // apart, in the same root coordinates the drag already uses.
+                detectTapGestures(
+                    onLongPress = { position ->
+                        if (registry.targetAt(position, "") == null) {
+                            haptics.play(Haptic.Expand)
+                            showPageManager = true
+                        }
+                    },
+                )
+            },
+    ) {
         dragState.bounds = androidx.compose.ui.unit.IntSize(
             constraints.maxWidth,
             constraints.maxHeight,
@@ -243,8 +284,10 @@ fun HomeScreen(
             )
 
             PageIndicator(
+                visible = showPageIndicator,
                 pageCount = pagerState.pageCount,
                 currentPage = pagerState.currentPage,
+                onGoToPage = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(vertical = 8.dp),
@@ -355,11 +398,36 @@ fun HomeScreen(
             )
         }
 
+        if (showPageManager) {
+            val labels = remember(workspace, installedApps) { workspaceLabels(workspace, installedApps) }
+            PageManager(
+                workspace = workspace,
+                labels = labels,
+                visiblePageId = workspace.pages.getOrNull(pagerState.currentPage)?.id,
+                onDismiss = { showPageManager = false },
+                onCreatePage = {
+                    // Appended, so the new page's index is the size before the
+                    // add — captured now rather than read back from a workspace
+                    // the store has not published yet.
+                    val newIndex = workspace.pages.size
+                    LauncherStore.update { current -> WorkspaceOps.addPage(current) }
+                    // Land on the page just made: it is empty, and the only
+                    // reason to have made it is to fill it.
+                    scope.launch { pagerState.animateScrollToPage(newIndex) }
+                },
+                onOpenPage = { pageId ->
+                    showPageManager = false
+                    val index = workspace.pages.indexOfFirst { it.id == pageId }
+                    if (index >= 0) scope.launch { pagerState.animateScrollToPage(index) }
+                },
+            )
+        }
+
         val target = menuTarget
         if (target != null) {
             ItemMenu(
                 item = target,
-                label = labelFor(target, installedApps),
+                label = itemLabel(target, installedApps),
                 canRemove = true,
                 onDismiss = { menuTarget = null },
                 onOpen = {
@@ -454,6 +522,16 @@ private fun pagerScrollFraction(state: PagerState): Float {
     return ((state.currentPage + state.currentPageOffsetFraction) / count.toFloat()).coerceIn(0f, 1f)
 }
 
+/**
+ * The page a Home press should land on, as a pager index. A workspace whose
+ * nominated page no longer exists — or which never had one — reads as the first
+ * page, which is also what a fresh layout means.
+ */
+private fun Workspace.defaultPageIndex(): Int {
+    val index = pages.indexOfFirst { it.id == defaultPageId }
+    return if (index >= 0) index else 0
+}
+
 /** Every app key the workspace refers to, pages and dock together. */
 private fun workspaceAppKeys(workspace: Workspace): Set<String> = buildSet {
     fun collect(item: WorkspaceItem) {
@@ -465,12 +543,6 @@ private fun workspaceAppKeys(workspace: Workspace): Set<String> = buildSet {
     }
     workspace.pages.forEach { page -> page.items.forEach(::collect) }
     workspace.dock.forEach(::collect)
-}
-
-private fun labelFor(item: WorkspaceItem, apps: Map<String, AppEntry>): String = when (item) {
-    is WorkspaceItem.App -> apps[item.ref.key]?.label ?: item.ref.packageName
-    is WorkspaceItem.Folder -> item.folder.name
-    is WorkspaceItem.Widget -> item.kind.name.lowercase().replace('_', ' ')
 }
 
 // -- Pager ---------------------------------------------------------------------
@@ -561,11 +633,13 @@ private fun WorkspacePager(
 
 @Composable
 private fun PageIndicator(
+    visible: Boolean,
     pageCount: Int,
     currentPage: Int,
+    onGoToPage: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (pageCount <= 1) return
+    if (pageCount <= 1 || !visible) return
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
@@ -574,11 +648,27 @@ private fun PageIndicator(
         repeat(pageCount) { index ->
             val selected = index == currentPage
             Box(
-                Modifier
-                    .size(if (selected) 7.dp else 6.dp)
+                // The visible dot is 6-7 dp. The touch target is not: it is a
+                // 28 dp square around it, because the dot itself is far below
+                // what a finger can reliably hit and a miss would land on the
+                // Home grid behind the strip.
+                modifier = Modifier
+                    .size(28.dp)
                     .clip(CircleShape)
-                    .background(glassContentColor().copy(alpha = if (selected) 0.95f else 0.35f)),
-            )
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = "Go to page ${index + 1}",
+                        onClick = { onGoToPage(index) },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(if (selected) 7.dp else 6.dp)
+                        .clip(CircleShape)
+                        .background(glassContentColor().copy(alpha = if (selected) 0.95f else 0.35f)),
+                )
+            }
         }
     }
 }

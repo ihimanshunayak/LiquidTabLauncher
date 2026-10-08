@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Liquid Tab</string>
+    <string name="app_name">Liquid Tab Launcher</string>
     <string name="settings_title">Launcher Settings</string>
 
     <!-- Home -->
@@ -88,7 +88,7 @@
     <string name="setting_columns">Columns</string>
     <string name="setting_version">Version</string>
     <string name="setting_default_home">Set as default Home app</string>
-    <string name="setting_default_home_summary">Android asks which Home app to use; choose Liquid Tab</string>
+    <string name="setting_default_home_summary">Android asks which Home app to use; choose Liquid Tab Launcher</string>
     <string name="style_list">List</string>
     <string name="style_grid">Grid</string>
     <string name="close">Close</string>

@@ -220,7 +220,11 @@ private fun ControlTile(
                     Color.Transparent
                 },
             )
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(
+                enabled = enabled,
+                onClickLabel = label,
+                onClick = onClick,
+            )
             .padding(10.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,

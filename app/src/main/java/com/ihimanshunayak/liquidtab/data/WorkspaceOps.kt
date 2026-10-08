@@ -260,6 +260,86 @@ object WorkspaceOps {
     /** A usable folder name from a user-typed string. */
     fun sanitizeFolderName(name: String): String = name.trim().take(24)
 
+    // ── Pages ─────────────────────────────────────────────────────────────────
+
+    /** The id for a page that has never existed in this workspace. */
+    private fun newPageId(): String = "page-${System.currentTimeMillis()}-${(0..0xFFFF).random()}"
+
+    /**
+     * Adds an empty page directly after [afterPageId], or at the end when the id
+     * is null or unknown.
+     *
+     * The page is left empty on purpose. A page is a canvas: seeding one would
+     * be guessing at what the user is about to arrange, and every guess would
+     * have to be undone by hand.
+     */
+    fun addPage(workspace: Workspace, afterPageId: String? = null): Workspace {
+        val found = workspace.pages.indexOfFirst { it.id == afterPageId }
+        val index = if (found < 0) workspace.pages.size else found + 1
+        return workspace.copy(
+            pages = workspace.pages.toMutableList().also { pages ->
+                pages.add(index, WorkspacePage(id = newPageId()))
+            },
+        )
+    }
+
+    /**
+     * Removes page [pageId], spilling what it held onto its neighbour.
+     *
+     * Deleting a page is a statement about the page, not about the shortcuts on
+     * it, so nothing is destroyed: the items move to the page before it — or to
+     * the page after it when the first page is the one going — in their existing
+     * order. The last page is always kept, because Home must always have
+     * somewhere to put an icon.
+     *
+     * The spill keeps the items in reading order. Removing the first page puts
+     * its items *before* the survivor's, because that is where the page they
+     * came from was; appending them instead would silently reorder the Home
+     * screen of every user who rearranged the page that went away.
+     *
+     * A Home-page nomination that pointed at the removed page is cleared, which
+     * reads back as "the first page is Home" rather than as a dangling id.
+     */
+    fun removePage(workspace: Workspace, pageId: String): Workspace {
+        if (workspace.pages.size <= 1) return workspace
+        val index = workspace.pages.indexOfFirst { it.id == pageId }
+        if (index < 0) return workspace
+        val removed = workspace.pages[index]
+        val survivorId = workspace.pages.getOrNull(index - 1)?.id ?: workspace.pages[index + 1].id
+        val pages = workspace.pages
+            .filterNot { it.id == pageId }
+            .map { page ->
+                when {
+                    page.id != survivorId -> page
+                    index == 0 -> page.copy(items = removed.items + page.items)
+                    else -> page.copy(items = page.items + removed.items)
+                }
+            }
+        return workspace.copy(
+            pages = pages,
+            defaultPageId = workspace.defaultPageId?.takeIf { it != pageId },
+        )
+    }
+
+    /** Moves page [pageId] to position [toIndex], clamped to the pages there are. */
+    fun movePage(workspace: Workspace, pageId: String, toIndex: Int): Workspace {
+        val from = workspace.pages.indexOfFirst { it.id == pageId }
+        if (from < 0) return workspace
+        val to = toIndex.coerceIn(0, workspace.pages.lastIndex)
+        if (to == from) return workspace
+        val pages = workspace.pages.toMutableList()
+        pages.add(to, pages.removeAt(from))
+        return workspace.copy(pages = pages)
+    }
+
+    /**
+     * Nominates the page a Home press returns to. An id that is not in the
+     * workspace — or null — clears the nomination, so the launcher never stores
+     * a choice it could not honour.
+     */
+    fun setDefaultPage(workspace: Workspace, pageId: String?): Workspace =
+        workspace.copy(defaultPageId = pageId?.takeIf { id -> workspace.pages.any { it.id == id } })
+
     /**
      * Applies a finished drag. The single entry point for "the finger lifted",
      * so the placement rules and the no-op cases live here rather than spread
@@ -302,13 +382,22 @@ object WorkspaceOps {
         }
 
         val pages = workspace.pages.map { page -> page.copy(items = page.items.mapNotNull(::prune)) }
-        val keptPages = pages.filterIndexed { index, page -> page.items.isNotEmpty() || index == pages.lastIndex }
+        val keptPages = pages.filterIndexed { index, page ->
+            // A page the user created and has not filled yet is a canvas, not a
+            // page this pass emptied — only the latter is removed.
+            val wasEmpty = workspace.pages[index].items.isEmpty()
+            page.items.isNotEmpty() || wasEmpty || index == pages.lastIndex
+        }
         val dock = workspace.dock.mapNotNull(::prune)
+        val keptIds = keptPages.mapTo(HashSet()) { it.id }
+        val defaultPageId = workspace.defaultPageId?.takeIf { it in keptIds }
 
-        return if (keptPages == workspace.pages && dock == workspace.dock) {
+        return if (keptPages == workspace.pages && dock == workspace.dock &&
+            defaultPageId == workspace.defaultPageId
+        ) {
             workspace
         } else {
-            workspace.copy(pages = keptPages, dock = dock)
+            workspace.copy(pages = keptPages, dock = dock, defaultPageId = defaultPageId)
         }
     }
 

@@ -22,6 +22,7 @@
 
 package com.ihimanshunayak.liquidtab
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -43,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,6 +73,17 @@ import com.ihimanshunayak.liquidtab.util.launchApp
 private enum class Surface { NONE, LIBRARY, SEARCH }
 
 class HomeActivity : ComponentActivity() {
+
+    /**
+     * Counts the Home presses the system delivers while the launcher is already
+     * the foreground app. HomeScreen reads a change in this number as "the user
+     * pressed Home", which is the only reliable way to know: a launcher that is
+     * already resumed gets no lifecycle callback for a Home press.
+     *
+     * A counter rather than a boolean because it is the transition that carries
+     * meaning - pressing Home twice must scroll twice.
+     */
+    private var homePressTick by mutableIntStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -110,10 +123,30 @@ class HomeActivity : ComponentActivity() {
                     LocalReduceDynamicBlur provides reduceDynamicBlur,
                     LocalAppBackdrop provides appBackdrop,
                 ) {
-                    LauncherRoot(glassSamplesBackdrop = glassSamplesBackdrop, appBackdrop = appBackdrop)
+                    LauncherRoot(
+                        glassSamplesBackdrop = glassSamplesBackdrop,
+                        appBackdrop = appBackdrop,
+                        homePressTick = homePressTick,
+                    )
                 }
             }
         }
+    }
+
+    /**
+     * A launch that lands on the activity that is already in front.
+     *
+     * singleTask means a Home press resumes this instance instead of building a
+     * new one, so this callback - not onCreate - is where a Home press is
+     * observed. The tick is bumped only for an actual launcher launch: an
+     * unrelated re-delivery of the same intent must not scroll the grid.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val isHomePress = intent.action == Intent.ACTION_MAIN &&
+            intent.categories?.contains(Intent.CATEGORY_HOME) == true
+        if (isHomePress) homePressTick++
     }
 }
 
@@ -129,6 +162,7 @@ class HomeActivity : ComponentActivity() {
 private fun LauncherRoot(
     glassSamplesBackdrop: Boolean,
     appBackdrop: com.ihimanshunayak.liquidtab.ui.glass.backdrop.backdrops.LayerBackdrop,
+    homePressTick: Int,
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as LiquidTabApp
@@ -137,6 +171,23 @@ private fun LauncherRoot(
     var surface by remember { mutableStateOf(Surface.NONE) }
     var showControls by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+
+    // The Home press the grid reacts to, as opposed to the press the activity
+    // counted. A press that has a surface to close is spent doing that - the
+    // same order the system launcher uses, so a stray Home press in the library
+    // comes back to Home rather than rearranging it underneath.
+    var gridTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(homePressTick) {
+        if (homePressTick == 0) return@LaunchedEffect
+        when {
+            showControls -> showControls = false
+            surface != Surface.NONE -> {
+                surface = Surface.NONE
+                query = ""
+            }
+            else -> gridTick++
+        }
+    }
 
     LaunchedEffect(Unit) { app.appRepository.refresh() }
 
@@ -166,6 +217,7 @@ private fun LauncherRoot(
                 windowWidth = measuredWidth,
                 windowHeight = measuredHeight,
                 onOpenLibrary = { surface = Surface.LIBRARY },
+                homePressTick = gridTick,
                 // A drag from the top-right corner or downwards from the top
                 // edge is the Control Center; a swipe up from the bottom edge is
                 // the app library. Both are measured against the window's own

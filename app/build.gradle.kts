@@ -1,3 +1,5 @@
+import java.time.LocalDate
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -19,10 +21,14 @@ android {
         // below that the glass falls back to a translucent scrim.
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Resolved when the build runs and shown on the About screen, so the app
+        // can state when the build under the user's finger was made.
+        buildConfigField("String", "BUILD_DATE", "\"${LocalDate.now()}\"")
     }
 
     compileOptions {

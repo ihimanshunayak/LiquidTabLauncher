@@ -22,8 +22,9 @@
 
 package com.ihimanshunayak.liquidtab.ui.library
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -124,7 +128,11 @@ fun AppLibrary(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(results, key = { it.key }) { entry ->
-                    LibraryTile(entry = entry, onClick = { onOpen(entry) })
+                    LibraryTile(
+                        entry = entry,
+                        onClick = { onOpen(entry) },
+                        onLongClick = { onLongPress(entry) },
+                    )
                 }
             }
         }
@@ -178,6 +186,7 @@ private fun SearchField(
 
 // ── Rows ──────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryRow(
     entry: AppEntry,
@@ -188,7 +197,17 @@ private fun LibraryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            // One node per row: the plate, label and package name are one tap
+            // target, so a reader should stop once and announce them together.
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${entry.label}, ${entry.packageName}"
+            }
+            .combinedClickable(
+                onClickLabel = "Open ${entry.label}",
+                onLongClickLabel = "App options for ${entry.label}",
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -224,12 +243,23 @@ private fun LibraryRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LibraryTile(entry: AppEntry, onClick: () -> Unit) {
+private fun LibraryTile(
+    entry: AppEntry,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = entry.label }
+            .combinedClickable(
+                onClickLabel = "Open ${entry.label}",
+                onLongClickLabel = "App options for ${entry.label}",
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),

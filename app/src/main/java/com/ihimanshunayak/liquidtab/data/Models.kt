@@ -97,6 +97,15 @@ data class Workspace(
     val version: Int = CURRENT_VERSION,
     val pages: List<WorkspacePage> = emptyList(),
     val dock: List<WorkspaceItem> = emptyList(),
+    /**
+     * The page a Home press returns to, or null for the first page.
+     *
+     * Stored by id rather than index so the choice survives reordering pages,
+     * and nullable so a layout written before this field existed — or one whose
+     * choice has since been deleted — reads as "first page" rather than as an
+     * error the launcher would have to recover from.
+     */
+    val defaultPageId: String? = null,
 ) {
     companion object {
         const val CURRENT_VERSION = 1

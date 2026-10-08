@@ -67,6 +67,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -313,7 +316,15 @@ private fun FolderAppTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            // The tile, its label and its Info action are one target; the Info
+            // row stays its own node so it can still be reached on its own.
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .combinedClickable(
+                onClickLabel = "Open $label",
+                onLongClickLabel = "Remove $label from the folder",
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .padding(vertical = 6.dp, horizontal = 4.dp),
     ) {
         Box(

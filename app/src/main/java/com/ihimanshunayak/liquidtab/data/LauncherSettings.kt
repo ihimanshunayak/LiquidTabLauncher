@@ -72,6 +72,13 @@ object LauncherSettings {
 
     val showLabels = BoolSetting("show_labels", default = true)
 
+    /**
+     * Whether the dots under the grid are drawn. On by default — with more than
+     * one page the dots are the only thing that says so — but a user who reads
+     * their layout from memory can reclaim the strip.
+     */
+    val showPageIndicator = BoolSetting("show_page_indicator", default = true)
+
     // ── Dock ──────────────────────────────────────────────────────────────────
 
     val dockMaxItems = IntSetting("dock_max_items", default = 6)
@@ -124,6 +131,7 @@ object LauncherSettings {
         gridColumns.load()
         iconScale.load()
         showLabels.load()
+        showPageIndicator.load()
         dockMaxItems.load()
         wallpaperMode.load()
         wallpaperUri.load()

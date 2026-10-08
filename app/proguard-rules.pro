@@ -20,3 +20,30 @@
 
 # Media3 session client resolves controllers by class name.
 -keep class androidx.media3.session.** { *; }
+
+# ── The persisted workspace ───────────────────────────────────────────────────
+#
+# This is a data format, not just code. [com.ihimanshunayak.liquidtab.data.Workspace]
+# is written to SharedPreferences as JSON and read back by a later build, so its
+# class and member names are part of what a user's saved layout means. R8 is free
+# to rename plain data classes, and a rename here would not fail a build — it
+# would silently fail to decode a layout the user had already arranged, which is
+# the one bug this launcher most needs not to have.
+#
+# The serializers are already kept above; this keeps the shapes they describe,
+# including the sealed [WorkspaceItem] subtypes that the JSON discriminator
+# ("app", "folder", "widget") resolves to.
+-keep class com.ihimanshunayak.liquidtab.data.Workspace { *; }
+-keep class com.ihimanshunayak.liquidtab.data.WorkspacePage { *; }
+-keep class com.ihimanshunayak.liquidtab.data.WorkspaceItem { *; }
+-keep class com.ihimanshunayak.liquidtab.data.WorkspaceItem$* { *; }
+-keep class com.ihimanshunayak.liquidtab.data.AppRef { *; }
+-keep class com.ihimanshunayak.liquidtab.data.FolderRef { *; }
+-keep class com.ihimanshunayak.liquidtab.data.WidgetKind { *; }
+
+# Enum constant names are read through `name`, which reflection-free code cannot
+# be sure survives enum unboxing. Widget kinds are written to disk by name.
+-keepclassmembers enum com.ihimanshunayak.liquidtab.data.WidgetKind {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

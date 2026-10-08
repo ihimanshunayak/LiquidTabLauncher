@@ -67,6 +67,10 @@ class LiquidTabApp : Application() {
 
             override fun onConfigurationChanged(newConfig: Configuration) = Unit
 
+            // Deprecated in favour of onTrimMemory, but a launcher still has to
+            // answer it: on API 26-33 no TRIM_MEMORY_* level is guaranteed at
+            // all, so this is the only low-memory signal those devices send.
+            @Suppress("DEPRECATION")
             override fun onLowMemory() {
                 LauncherStore.flush()
                 appRepository.trim()
