@@ -128,6 +128,13 @@ Home pages are managed here as well as from the Home long press, using the same
 
 ## Design decisions worth knowing
 
+**Nothing is renamed in a release build.** R8 shrinks and optimizes — Compose
+needs it to run at the speed it was written for — but `-dontobfuscate` keeps
+every class name, so a stack trace from a user's device is readable without a
+mapping file to hand. The AGP defaults do not include this, so it is stated in
+`proguard-rules.pro` rather than assumed; the mapping output confirms no class in
+this package is renamed.
+
 **Nothing is guessed.** A shortcut whose app has gone is removed the moment a
 launch fails, not left as a dead icon until the next package broadcast. A
 workspace payload written by a newer build is copied aside under
@@ -158,6 +165,21 @@ layer and the page move only happens on a bare Home screen.
 **Widgets never draw a zero.** Every widget state is one of idle, loading, ready
 (with a stale flag) or unavailable with a reason, so a widget says what it is
 waiting for rather than showing placeholder text.
+
+## Installing a release
+
+Signed APKs are published on the [releases page](https://github.com/ihimanshunayak/LiquidTabLauncher/releases).
+Android refuses to update a build signed by a different key, so uninstall any
+earlier APK from another source before installing one of these.
+
+Building a release yourself needs the signing key. `keystore.properties` names it
+and is gitignored — copy `keystore.properties.example` and create the keystore
+once with the `keytool` line in that file. Without it the release build still
+runs and produces `app-release-unsigned.apk` rather than failing.
+
+```powershell
+.\gradlew.bat :app:assembleRelease
+```
 
 ## Requirements
 
