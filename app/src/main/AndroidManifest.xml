@@ -2,16 +2,22 @@
 <!--
   Liquid Tab Launcher — the FreeMusic design system as a tablet Home app.
 
-  Two things make this a launcher rather than a normal app:
+  Four things make this a launcher rather than a normal app:
 
    1. HomeActivity claims ACTION_MAIN + CATEGORY_HOME + CATEGORY_DEFAULT, so
       Android offers it as a Home app on the default-home chooser.
-   2. A <queries> element declares what the launcher may see across packages:
+   2. WelcomeActivity claims ACTION_MAIN + CATEGORY_LAUNCHER, so the app has
+      an icon in the app drawer and can be opened before it holds the Home
+      role. A launcher needs both: Home for the system, LAUNCHER for the user.
+   3. A <queries> element declares what the launcher may see across packages:
       launchable apps for the workspace/library/search, and the media3 service
       actions so the Now Playing widget can reach the FreeMusic player.
       QUERY_ALL_PACKAGES is deliberately NOT used — it is a Play-policy
       restricted permission and visibility of launchable apps is all a
       launcher actually needs.
+   4. Both entry points are exported and both carry a label, so the app is
+      reachable from Settings > Apps on any device, including one where the
+      Home role was never granted.
 
   Permissions are kept to the minimum the features actually use: the network
   for the weather widget, boot to restart the clock, and nothing else. The
@@ -62,6 +68,31 @@
         android:theme="@style/Theme.LiquidTab">
 
         <!--
+          The app-drawer entry point, and the only exported activity that is
+          not Home. Without it this app would install completely and then be
+          unreachable: a launcher that declares only CATEGORY_HOME has no icon
+          anywhere until the user has already made it their Home app, and a
+          user cannot make an app Home without first being able to open it.
+          This activity breaks that circular dependency, and stays useful
+          afterwards as the way back to Settings from outside the launcher.
+
+          `taskAffinity=""` keeps it out of the Home task so backing out of it
+          cannot leave the Home screen with nothing to return to.
+        -->
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.LiquidTab">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
           The Home activity itself. `stateNotNeeded` and `excludeFromRecents`
           are the launcher contract: the Home app is always alive, so Android
           must not try to restore it into a saved state, and it must never
@@ -90,9 +121,9 @@
         </activity>
 
         <!--
-          The only other entry point: settings, reachable from the launcher
-          itself and from Settings > Apps. Not exported — launchers never
-          advertise their own preferences to the system launcher list.
+          Settings, reachable from the launcher, from WelcomeActivity and from
+          Settings > Apps. Not exported — launchers never advertise their own
+          preferences to the system launcher list.
         -->
         <activity
             android:name=".settings.SettingsActivity"
