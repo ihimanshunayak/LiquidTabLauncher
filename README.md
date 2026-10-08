@@ -305,6 +305,36 @@ which page it is and whether it is the Home page. Touch targets are held at the
 platform minimum: the transport buttons claim a 44 dp box, the quick-action chips
 and segment pills enforce a minimum height, and control tiles are 84 dp tall.
 
+## Localization
+
+Every user-visible string lives in `app/src/main/res/values/strings.xml`, grouped
+by the screen that shows it, and is read through `stringResource` /
+`pluralStringResource`. There is no user-facing English left in Kotlin. That is
+deliberate: a literal baked into a composable cannot be translated, and it is
+invisible to every translation workflow.
+
+Two things stay literal on purpose:
+
+- **Log tags and message text** (`Log.e(TAG, ...)`) — developer-facing, never
+  rendered.
+- **Component names and licence identifiers on the About screen.** A licence is
+  granted under a name, so `AndroidX Media3`, `Jetpack Compose` and the vendored
+  backdrop engine's notice are shown exactly as they were written. The sentence
+  that explains what each one does to the app *is* translated.
+
+Two consequences worth knowing before editing:
+
+- `WidgetSource.Unavailable` carries a `@StringRes Int`, not a `String`, because
+  its producers (the weather and media watchers) run outside composition and have
+  no `Context` to resolve a resource with.
+- `itemLabel()` and `workspaceLabels()` in `ItemLabels.kt` are `@Composable`,
+  since a widget's label is a resource lookup. They cannot be called inside
+  `remember { }`; resolve them in the composable body instead.
+
+Adding a language is a matter of dropping in
+`app/src/main/res/values-<tag>/strings.xml` — no Kotlin change. Placeholders are
+positional (`%1$s`, `%1$d`) so a translation may reorder them.
+
 ## Testing
 
 `app/src/test/.../WorkspaceOpsTest.kt` covers the placement and page rules —
