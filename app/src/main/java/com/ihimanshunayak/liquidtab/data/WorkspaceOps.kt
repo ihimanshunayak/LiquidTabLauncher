@@ -367,16 +367,22 @@ object WorkspaceOps {
      * prune emptied. Only ever removes: a launcher correcting itself must not
      * also decide to add anything.
      *
+     * [installedPackages] is matched by package, not by package+activity. An
+     * app that renames its launcher activity across an update is still
+     * installed, and [com.ihimanshunayak.liquidtab.util.launchApp] already
+     * re-resolves the class at tap time — pruning on the exact key would delete
+     * on the user's behalf the very shortcut that fallback exists to keep.
+     *
      * The last page is always kept, so Home is never left with nowhere to put
      * an icon — an empty trailing page is a canvas the user still has.
      */
-    fun pruneMissing(workspace: Workspace, installedKeys: Set<String>): Workspace {
+    fun pruneMissing(workspace: Workspace, installedPackages: Set<String>): Workspace {
         /** The corrected form of [item], or null when nothing of it is left. */
         fun prune(item: WorkspaceItem): WorkspaceItem? = when (item) {
-            is WorkspaceItem.App -> item.takeIf { it.ref.key in installedKeys }
+            is WorkspaceItem.App -> item.takeIf { it.ref.packageName in installedPackages }
             is WorkspaceItem.Widget -> item
             is WorkspaceItem.Folder -> item.folder.items
-                .filter { it.key in installedKeys }
+                .filter { it.packageName in installedPackages }
                 .takeIf { it.isNotEmpty() }
                 ?.let { members -> WorkspaceItem.Folder(item.folder.copy(items = members)) }
         }

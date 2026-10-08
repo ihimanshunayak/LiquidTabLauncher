@@ -52,7 +52,15 @@ data class DragSession(
  */
 class CellRegistry {
 
-    private class Cell(val key: String, val bounds: Rect, val index: Int)
+    private class Cell(
+        val key: String,
+        val bounds: Rect,
+        val index: Int,
+        /** Set when this cell is a folder icon and may receive a filed app. */
+        val folderId: String? = null,
+        /** Where a filed app lands inside that folder. */
+        val folderIndex: Int = 0,
+    )
 
     private val pageCells = HashMap<String, Cell>()
     private val dockCells = HashMap<String, Cell>()
@@ -62,27 +70,61 @@ class CellRegistry {
     /** The dock plate's own rectangle, so a miss inside it can still dock. */
     var dockBounds: Rect? = null
 
-    /** The page currently laid out; a drag with no better answer lands here. */
-    var visiblePageId: String = ""
-
-    fun registerPageCell(pageId: String, key: String, index: Int, bounds: Rect) {
-        visiblePageId = pageId
+    /**
+     * Registers one grid cell. A cell whose item is a folder also answers as a
+     * folder target, which is what makes "drop an app onto a folder icon" work.
+     *
+     * The page each cell belongs to is recorded here rather than being read
+     * from "the page that laid out last". `beyondViewportPageCount` keeps the
+     * neighbouring pages composed, so they register cells too and the last
+     * writer is whichever page happened to lay out most recently - not the one
+     * the user is looking at. A drop resolved through a cell always knows its
+     * own page, so resolving it that way is both simpler and correct while a
+     * swipe is still settling.
+     */
+    fun registerPageCell(
+        pageId: String,
+        key: String,
+        index: Int,
+        bounds: Rect,
+        folderId: String? = null,
+        folderIndex: Int = 0,
+    ) {
         pageOwner[key] = pageId
         pageCells[key] = Cell(key, bounds, index)
+        if (folderId != null) {
+            folderCells[key] = Cell(key, bounds, index, folderId, folderIndex)
+        } else {
+            folderCells.remove(key)
+        }
+    }
+
+    /**
+     * Registers a folder docked in the dock. Dock folders are drop targets for
+     * the same reason page folders are; the registry is shared, so a folder's
+     * own rect cannot shadow the page cell underneath it - folders are checked
+     * first on purpose.
+     */
+    fun registerDockFolderCell(key: String, index: Int, bounds: Rect, folderId: String, folderIndex: Int) {
+        folderCells[key] = Cell(key, bounds, index, folderId, folderIndex)
     }
 
     fun registerDockCell(key: String, index: Int, bounds: Rect) {
         dockCells[key] = Cell(key, bounds, index)
     }
 
-    fun registerFolderCell(folderId: String, key: String, index: Int, bounds: Rect) {
-        folderCells[key] = Cell(key, bounds, index)
-    }
-
-    /** Forgets a page's cells when it leaves composition. */
+    /**
+     * Forgets a page's cells when it leaves composition. Without this a page
+     * the pager has since dropped still answers for the space it used to
+     * occupy, and a drag resolves to an item that is no longer drawn.
+     */
     fun forgetPageCells(pageId: String) {
-        val gone = pageOwner.filterValues { it == pageId }.keys
-        gone.forEach { pageCells.remove(it); pageOwner.remove(it) }
+        val gone = pageOwner.filterValues { it == pageId }.keys.toList()
+        gone.forEach { key ->
+            pageCells.remove(key)
+            folderCells.remove(key)
+            pageOwner.remove(key)
+        }
     }
 
     fun clear() {
@@ -102,8 +144,14 @@ class CellRegistry {
      * page it overlaps.
      */
     fun targetAt(position: Offset, draggedKey: String): WorkspaceOps.DropTarget? {
+        // A folder is a folder wherever it lives, so both registries are
+        // searched before anything that would move the item to a page or the
+        // dock: dropping an app on a folder must file it, not displace it.
         folderCells.values.firstOrNull { it.bounds.contains(position) && it.key != draggedKey }?.let {
-            return WorkspaceOps.DropTarget.Folder(folderId = it.key, index = it.index)
+            val folderId = it.folderId
+            if (folderId != null) {
+                return WorkspaceOps.DropTarget.Folder(folderId = folderId, index = it.folderIndex)
+            }
         }
 
         val dock = dockBounds
@@ -117,7 +165,11 @@ class CellRegistry {
         }
 
         pageCells.values.firstOrNull { it.bounds.contains(position) && it.key != draggedKey }?.let {
-            return WorkspaceOps.DropTarget.Page(pageId = visiblePageId, index = it.index)
+            // The cell's own page, not "the page laid out last": while a swipe
+            // is settling both pages are composed and only the cell knows which
+            // one it belongs to.
+            val owner = pageOwner[it.key] ?: return null
+            return WorkspaceOps.DropTarget.Page(pageId = owner, index = it.index)
         }
 
         return null

@@ -56,10 +56,10 @@ class AppRepository(private val context: Context) {
     val apps: StateFlow<List<AppEntry>> = _apps.asStateFlow()
 
     /**
-     * Icons by package, plus which drawable they were built from so a themed
-     * icon or density change can invalidate a stale entry. The map is bounded
-     * at [ICON_CACHE_LIMIT]; beyond that the least recently used entry is
-     * dropped, which in practice is an app the user has not looked at in weeks.
+     * Icons by profile+package, so the same app in a work profile and the
+     * personal profile keeps its own icon. The map is bounded at
+     * [ICON_CACHE_LIMIT]; beyond that the least recently used entry is dropped,
+     * which in practice is an app the user has not looked at in weeks.
      */
     private val iconCache = object : LinkedHashMap<String, ImageBitmap>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ImageBitmap>?) =
@@ -108,13 +108,17 @@ class AppRepository(private val context: Context) {
                     emptyList()
                 }
                 for (activity in activities) {
-                    val key = "${activity.applicationInfo.packageName}/${activity.name}"
+                    // The profile is part of the identity, not just the package:
+                    // the same app in two profiles is two entries, each with its
+                    // own label and icon.
+                    val key = "${profile.hashCode()}:${activity.applicationInfo.packageName}/${activity.name}"
                     if (!seen.add(key)) continue
                     entries += AppEntry(
                         packageName = activity.applicationInfo.packageName,
                         activityName = activity.name,
                         label = activity.label?.toString()
                             ?: activity.applicationInfo.loadLabel(packageManager).toString(),
+                        userHandle = profile,
                     )
                 }
             }
@@ -163,13 +167,14 @@ class AppRepository(private val context: Context) {
             }
             lastIconDensity = density
         }
-        synchronized(iconCache) { iconCache[entry.packageName] }?.let { return it }
-        if (entry.packageName in iconMisses) return null
+        val cacheKey = entry.iconKey
+        synchronized(iconCache) { iconCache[cacheKey] }?.let { return it }
+        if (cacheKey in iconMisses) return null
 
         val bitmap = withContext(Dispatchers.IO) {
             try {
                 val drawable: Drawable? = if (launcherApps != null) {
-                    launcherApps.getApplicationInfo(entry.packageName, 0, android.os.Process.myUserHandle())
+                    launcherApps.getApplicationInfo(entry.packageName, 0, entry.profile)
                         ?.loadIcon(packageManager)
                 } else {
                     packageManager.getApplicationIcon(entry.packageName)
@@ -182,10 +187,10 @@ class AppRepository(private val context: Context) {
         }
 
         if (bitmap == null) {
-            iconMisses += entry.packageName
+            iconMisses += cacheKey
             return null
         }
-        synchronized(iconCache) { iconCache[entry.packageName] = bitmap }
+        synchronized(iconCache) { iconCache[cacheKey] = bitmap }
         return bitmap
     }
 
@@ -241,8 +246,12 @@ class AppRepository(private val context: Context) {
     /**
      * A stable identity for the current scan, so the workspace can drop
      * shortcuts to uninstalled apps without rescanning per item.
+     *
+     * Keyed by package rather than package+activity: an app that renames its
+     * launcher activity is still installed, and pruning on the exact key would
+     * remove a shortcut that still launches.
      */
-    fun installedKeys(): Set<String> = apps.value.mapTo(HashSet()) { it.key }
+    fun installedPackages(): Set<String> = apps.value.mapTo(HashSet()) { it.packageName }
 
     /** The current configuration, used to detect a size change cheaply. */
     fun configuration(): Configuration = context.resources.configuration

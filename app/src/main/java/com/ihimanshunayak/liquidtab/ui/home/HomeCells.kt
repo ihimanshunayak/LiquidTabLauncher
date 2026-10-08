@@ -84,11 +84,24 @@ fun WorkspaceCell(
     val session = dragState.session
     val isDragging = session?.itemKey == item.key
 
+    // A folder answers drops anywhere on its icon, so a page cell holding a
+    // folder registers a second time as a folder target. The index reported is
+    // the folder's own end, not the cell's position in the grid: a dropped app
+    // is appended inside the folder, which is what the icon it landed on shows.
+    val folder = (item as? WorkspaceItem.Folder)?.folder
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
-                registry.registerPageCell(containerId, item.key, index, coordinates.boundsInRoot())
+                registry.registerPageCell(
+                    pageId = containerId,
+                    key = item.key,
+                    index = index,
+                    bounds = coordinates.boundsInRoot(),
+                    folderId = folder?.id,
+                    folderIndex = folder?.items?.size ?: 0,
+                )
             }
             .pointerInput(item.key, reduceMotion) {
                 detectDragGesturesAfterLongPress(

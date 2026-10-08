@@ -56,6 +56,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +72,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -139,9 +141,15 @@ fun HomeScreen(
     // changes - never per frame.
     var icons by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
     val wantedKeys = remember(workspace) { workspaceAppKeys(workspace) }
-    LaunchedEffect(wantedKeys, apps, iconSize) {
+    val density = LocalDensity.current
+
+    LaunchedEffect(wantedKeys, apps, iconSize, density) {
         if (apps.isEmpty()) return@LaunchedEffect
-        val sizePx = iconSize.value.toInt().coerceAtLeast(1)
+        // `iconSize` is a Dp and a bitmap is measured in pixels. Passing the dp
+        // value straight through under-samples the drawable by the density
+        // factor, which is invisible at mdpi and visibly soft from xhdpi up —
+        // and every modern tablet is xhdpi or denser.
+        val sizePx = with(density) { iconSize.roundToPx() }.coerceAtLeast(1)
         val byKey = apps.associateBy { it.key }
         val resolved = HashMap<String, ImageBitmap>(wantedKeys.size)
         for (key in wantedKeys) {
@@ -154,8 +162,14 @@ fun HomeScreen(
     // Seed a first-run workspace once apps are known, and only when the
     // workspace is genuinely empty: seeding from an empty app list would write
     // an empty Home screen and then never try again.
+    //
+    // Guarded by a persisted flag as well as by emptiness. Emptiness alone is
+    // not evidence the user has never had a Home screen — a user who deletes
+    // every shortcut has an empty Home *on purpose*, and re-seeding it would be
+    // the launcher overruling them.
     LaunchedEffect(apps, dockMax) {
-        if (apps.isEmpty()) return@LaunchedEffect
+        if (apps.isEmpty() || LauncherSettings.homeSeeded.value) return@LaunchedEffect
+        LauncherSettings.homeSeeded.value = true
         LauncherStore.update { current ->
             if (current.pages.all { it.items.isEmpty() } && current.dock.isEmpty()) {
                 WorkspaceOps.firstRun(apps, dockMax)
@@ -169,7 +183,7 @@ fun HomeScreen(
     // that. Only ever removes.
     LaunchedEffect(apps) {
         if (apps.isEmpty()) return@LaunchedEffect
-        val installed = apps.mapTo(HashSet()) { it.key }
+        val installed = apps.mapTo(HashSet()) { it.packageName }
         LauncherStore.update { current -> WorkspaceOps.pruneMissing(current, installed) }
     }
 
@@ -598,6 +612,13 @@ private fun WorkspacePager(
         beyondViewportPageCount = 1,
     ) { pageIndex ->
         val page = workspace.pages[pageIndex]
+
+        // Cells of a page the pager has dropped must stop answering, or a drag
+        // resolves to an item that is no longer drawn.
+        DisposableEffect(page.id, registry) {
+            onDispose { registry.forgetPageCells(page.id) }
+        }
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
             modifier = Modifier.fillMaxSize(),
@@ -730,7 +751,20 @@ private fun Dock(
                         Modifier
                             .width(DOCK_CELL_WIDTH)
                             .onGloballyPositioned { coordinates ->
-                                registry.registerDockCell(item.key, index, coordinates.boundsInRoot())
+                                val bounds = coordinates.boundsInRoot()
+                                registry.registerDockCell(item.key, index, bounds)
+                                // A docked folder is a drop target too, so the
+                                // same fill-the-folder gesture works on the dock
+                                // as on a page.
+                                (item as? WorkspaceItem.Folder)?.let { folder ->
+                                    registry.registerDockFolderCell(
+                                        key = item.key,
+                                        index = index,
+                                        bounds = bounds,
+                                        folderId = folder.folder.id,
+                                        folderIndex = folder.folder.items.size,
+                                    )
+                                }
                             },
                     ) {
                         when (item) {

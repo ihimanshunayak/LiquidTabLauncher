@@ -41,38 +41,61 @@ fun launchApp(
     context: Context,
     ref: AppRef,
     sourceBounds: android.graphics.Rect? = null,
+): Boolean {
+    val first = ref.className ?: resolveActivity(context, ref)
+    if (first != null && startActivity(context, ref.packageName, first, sourceBounds)) return true
+
+    // The recorded class did not work — most often because an app update
+    // renamed its launcher activity. Ask the system what the class is now
+    // before giving up on the shortcut.
+    val resolved = resolveActivity(context, ref)
+    if (resolved != null && resolved != first &&
+        startActivity(context, ref.packageName, resolved, sourceBounds)
+    ) {
+        return true
+    }
+    Log.w(TAG, "No launchable activity for $ref")
+    return false
+}
+
+/** Starts [packageName]/[className]. Returns false when Android refuses. */
+private fun startActivity(
+    context: Context,
+    packageName: String,
+    className: String,
+    sourceBounds: android.graphics.Rect?,
 ): Boolean = try {
-    val className = ref.className ?: resolveActivity(context, ref)
-        ?: throw ActivityNotFoundException("No launcher activity for ${ref.packageName}")
-    val component = ComponentName(ref.packageName, className)
     val intent = Intent(Intent.ACTION_MAIN)
         .addCategory(Intent.CATEGORY_LAUNCHER)
-        .setComponent(component)
+        .setComponent(ComponentName(packageName, className))
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
     sourceBounds?.let { intent.sourceBounds = it }
     context.startActivity(intent)
     true
 } catch (e: ActivityNotFoundException) {
-    Log.w(TAG, "No activity for $ref", e)
+    Log.w(TAG, "No activity for $packageName/$className", e)
     false
 } catch (e: SecurityException) {
     // A work-profile app can become inaccessible between the scan and the tap.
-    Log.w(TAG, "Launch denied for $ref", e)
+    Log.w(TAG, "Launch denied for $packageName/$className", e)
     false
 } catch (t: Throwable) {
-    Log.e(TAG, "Launch failed for $ref", t)
+    Log.e(TAG, "Launch failed for $packageName/$className", t)
     false
 }
 
 /**
- * Recovers a shortcut whose activity name was not recorded. An app can rename
- * its launcher activity across an update, and a shortcut saved by package alone
- * must keep working.
+ * The package's current launcher activity.
+ *
+ * Read fresh at launch rather than trusted from the saved shortcut: the class
+ * recorded when the user dropped the icon may since have been renamed by an
+ * app update.
  */
 private fun resolveActivity(context: Context, ref: AppRef): String? = try {
     val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
-    val activities = launcherApps?.getActivityList(ref.packageName, Process.myUserHandle())
-    activities?.firstOrNull()?.name
+    launcherApps?.getActivityList(ref.packageName, Process.myUserHandle())
+        ?.firstOrNull()
+        ?.name
         ?: context.packageManager
             .getLaunchIntentForPackage(ref.packageName)
             ?.component

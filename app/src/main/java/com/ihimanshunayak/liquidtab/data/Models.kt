@@ -118,13 +118,32 @@ data class Workspace(
  * A runtime view of one installed app — never persisted, rebuilt from the
  * PackageManager. The icon is loaded separately and cached by [AppRepository]
  * because it is the expensive part.
+ *
+ * [userHandle] is carried because the same package can be installed in more
+ * than one profile, and each profile's copy has its own label and icon. Icon
+ * lookups that assume the personal profile silently fail for a work app, so
+ * the handle travels with the entry rather than being assumed at draw time.
+ *
+ * It is nullable, and null means the personal profile, rather than defaulting
+ * to `Process.myUserHandle()`: that call is framework code, and evaluating it
+ * as a default argument makes the data class unusable off-device.
  */
 data class AppEntry(
     val packageName: String,
     val activityName: String,
     val label: String,
+    val userHandle: android.os.UserHandle? = null,
 ) {
     val ref: AppRef get() = AppRef(packageName, activityName)
 
     val key: String get() = ref.key
+
+    /** The profile to resolve this entry against, resolved lazily on-device. */
+    val profile: android.os.UserHandle get() = userHandle ?: android.os.Process.myUserHandle()
+
+    /**
+     * Identity for the icon cache: same package in two profiles are two
+     * different icons, so the profile is part of the key.
+     */
+    val iconKey: String get() = "${userHandle?.hashCode() ?: 0}:$packageName"
 }
