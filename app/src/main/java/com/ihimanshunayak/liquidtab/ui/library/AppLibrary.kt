@@ -48,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -64,12 +65,17 @@ import com.ihimanshunayak.liquidtab.data.LauncherSettings
 import com.ihimanshunayak.liquidtab.data.LibraryStyle
 import com.ihimanshunayak.liquidtab.ui.glass.glassContentColor
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import java.util.Locale
 
 /**
  * The library. [query] is hoisted so the search field and the result list share
  * one source of truth, and so a caller can open the library already filtered —
  * which is how the Control Center's search affordance works.
+ *
+ * [autofocus] raises the keyboard as soon as the library appears, which is what
+ * makes it usable as a search palette rather than only as a list.
  */
 @Composable
 fun AppLibrary(
@@ -80,15 +86,22 @@ fun AppLibrary(
     onLongPress: (AppEntry) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+    autofocus: Boolean = false,
 ) {
     val style by LauncherSettings.libraryStyle.state.collectAsStateWithLifecycle()
     val index = remember(apps) { SearchIndex(apps) }
     val results = remember(index, query) { index.search(query) }
 
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(autofocus) {
+        if (autofocus) runCatching { focusRequester.requestFocus() }
+    }
+
     Column(modifier.fillMaxSize()) {
         SearchField(
             query = query,
             onQueryChange = onQueryChange,
+            focusRequester = focusRequester,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 10.dp),
@@ -145,6 +158,7 @@ fun AppLibrary(
 private fun SearchField(
     query: String,
     onQueryChange: (String) -> Unit,
+    focusRequester: FocusRequester?,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(16.dp)
@@ -178,7 +192,11 @@ private fun SearchField(
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     imeAction = ImeAction.Search,
                 ),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .let { base ->
+                        if (focusRequester != null) base.focusRequester(focusRequester) else base
+                    },
             )
         }
     }

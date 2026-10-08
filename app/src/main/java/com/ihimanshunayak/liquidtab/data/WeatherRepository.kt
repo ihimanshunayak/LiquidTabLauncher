@@ -102,9 +102,11 @@ object WeatherRepository {
                 weather
             } catch (t: Throwable) {
                 Log.w(TAG, "Weather request failed", t)
-                // Keeping the last good value is better than a blank widget; the
-                // timestamp tells the UI it is stale.
-                cached
+                // Keeping the last good value is better than a blank widget, but
+                // only when it was for these coordinates: the widget's city is
+                // user-editable, and falling back to a previous city's number
+                // would label one place's weather with another's.
+                cached.takeIf { cachedFor == latitude to longitude }
             }
         }
     }

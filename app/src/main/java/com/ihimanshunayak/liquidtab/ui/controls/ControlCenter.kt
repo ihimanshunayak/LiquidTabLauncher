@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.Brightness6
 import androidx.compose.material.icons.rounded.FlashlightOn
 import androidx.compose.material.icons.rounded.NotificationsOff
@@ -59,6 +60,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ihimanshunayak.liquidtab.ui.glass.glassContentColor
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 /**
  * The panel. [onDismiss] fires from a tap outside the sheet, so the gesture
@@ -73,6 +76,13 @@ fun ControlCenter(
     modifier: Modifier = Modifier,
 ) {
     val controls = rememberQuickControlsState()
+
+    // The Bluetooth tile's permission ask lives here because the tile is the
+    // only thing that needs it, and the result has to reach the state that
+    // produced the tile.
+    val bluetoothPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { controls.onPermissionResult() }
 
     Box(
         modifier = modifier
@@ -116,12 +126,36 @@ fun ControlCenter(
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
+                    icon = Icons.Rounded.Bluetooth,
+                    label = when {
+                        controls.bluetoothNeedsPermission -> "Allow Bluetooth"
+                        controls.bluetoothEnabled -> "Bluetooth on"
+                        else -> "Bluetooth settings"
+                    },
+                    active = controls.bluetoothEnabled,
+                    onClick = {
+                        // From API 31 reading the adapter needs a runtime
+                        // permission. Asking here — when the user taps the tile
+                        // — is what the manifest comment promises, and the
+                        // alternative is a tile permanently stuck reading off.
+                        if (controls.bluetoothNeedsPermission) {
+                            bluetoothPermission.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                        } else {
+                            controls.openBluetoothSettings()
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                ControlTile(
                     icon = Icons.Rounded.NotificationsOff,
                     label = if (controls.dndEnabled) "Do not disturb on" else "Do not disturb",
                     active = controls.dndEnabled,
                     onClick = { controls.toggleDnd() },
                     modifier = Modifier.weight(1f),
                 )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.FlashlightOn,
                     label = if (controls.torchEnabled) "Torch on" else "Torch",
@@ -130,9 +164,6 @@ fun ControlCenter(
                     onClick = { controls.toggleTorch() },
                     modifier = Modifier.weight(1f),
                 )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.ScreenRotation,
                     label = if (controls.rotationLocked) "Rotation locked" else "Auto-rotate",
@@ -140,6 +171,9 @@ fun ControlCenter(
                     onClick = { controls.toggleRotationLock() },
                     modifier = Modifier.weight(1f),
                 )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ControlTile(
                     icon = Icons.Rounded.Settings,
                     label = "Settings",
@@ -147,6 +181,26 @@ fun ControlCenter(
                     onClick = onOpenSettings,
                     modifier = Modifier.weight(1f),
                 )
+                if (controls.brightnessNeedsPermission) {
+                    ControlTile(
+                        icon = Icons.Rounded.Brightness6,
+                        label = "Allow brightness",
+                        active = false,
+                        // The window-level write already applied, so this tile
+                        // is about making the change device-wide rather than
+                        // pretending the slider did nothing.
+                        onClick = { controls.requestBrightnessPermission() },
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    ControlTile(
+                        icon = Icons.Rounded.Apps,
+                        label = "All apps",
+                        active = false,
+                        onClick = onOpenLibrary,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             // ── Brightness ────────────────────────────────────────────────────

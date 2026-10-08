@@ -147,6 +147,7 @@ object CalendarSource {
             _state.value = WidgetSource.Unavailable("Grant calendar access in Settings")
             return
         }
+
         val handler = Handler(Looper.getMainLooper())
         val registered = object : ContentObserver(handler) {
             override fun onChange(selfChange: Boolean) {

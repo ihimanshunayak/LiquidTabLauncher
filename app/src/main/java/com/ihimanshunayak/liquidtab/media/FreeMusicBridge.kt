@@ -108,6 +108,15 @@ object FreeMusicBridge {
                     _state.value = WidgetSource.Unavailable("Open FreeMusic to start playing")
                     return@addListener
                 }
+                // The widget can be gone by now: the session build is a service
+                // bind, and the user may have removed the widget or left Home in
+                // the meantime. Assigning a controller that nothing will ever
+                // release would keep the service connection for the life of the
+                // process, so a late arrival is released instead.
+                if (consumers <= 0) {
+                    runCatching { built.release() }
+                    return@addListener
+                }
                 controller = built
                 built.addListener(listener)
                 publish()

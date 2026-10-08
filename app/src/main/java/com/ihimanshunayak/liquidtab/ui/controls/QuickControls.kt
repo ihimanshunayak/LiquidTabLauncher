@@ -58,7 +58,16 @@ private const val TAG = "QuickControls"
  * listening in the background would be a registered receiver running for the
  * whole session.
  */
-class QuickControlsState(private val context: Context) {
+class QuickControlsState(
+    private val context: Context,
+    /**
+     * The activity whose window the brightness slider drives. Optional so the
+     * state can be built in a preview or a test, but a real panel is always
+     * hosted by one — window brightness needs no permission and therefore works
+     * even when WRITE_SETTINGS has never been granted.
+     */
+    private val activity: android.app.Activity? = null,
+) {
 
     var wifiEnabled by mutableStateOf(false)
         private set
@@ -75,6 +84,20 @@ class QuickControlsState(private val context: Context) {
     var brightness by mutableFloatStateOf(0.5f)
         private set
 
+    /**
+     * True once the user has moved the brightness slider without the special
+     * WRITE_SETTINGS grant, so the panel can offer the one-tap way to get it.
+     */
+    var brightnessNeedsPermission by mutableStateOf(false)
+        private set
+
+    /**
+     * True once the app has been refused the runtime Bluetooth permission, so
+     * the tile can say why it reads off instead of silently lying.
+     */
+    var bluetoothNeedsPermission by mutableStateOf(false)
+        private set
+
     /** 0 = auto, 1 = portrait locked, 2 = landscape locked, 3 = free rotation. */
     var rotationLocked by mutableStateOf(false)
         private set
@@ -82,12 +105,24 @@ class QuickControlsState(private val context: Context) {
     var ringerMode by mutableIntStateOf(AudioManager.RINGER_MODE_NORMAL)
         private set
 
-    /** True when the system reports a torch-capable camera at all. */
+    /**
+     * True when the system reports a torch-capable camera at all.
+     *
+     * Capability, not state: whether the torch is *on* is only knowable from
+     * the camera service's own callback, which is registered in [start].
+     */
     var torchAvailable by mutableStateOf(false)
         private set
 
     private val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
     private var torchCameraId: String? = null
+
+    /**
+     * The camera service's torch state, which is the only source that knows
+     * about a torch lit from somewhere other than this app — the system quick
+     * settings, a camera app, or a widget.
+     */
+    private var torchCallback: CameraManager.TorchCallback? = null
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
@@ -114,11 +149,31 @@ class QuickControlsState(private val context: Context) {
             }
         }.getOrNull()
         torchAvailable = torchCameraId != null
+
+        // Whether the torch is lit is not readable as a property; the camera
+        // service reports it through this callback, and reports changes made
+        // outside this app too. Registered only while the panel is composed.
+        torchCameraId?.let { id ->
+            val callback = object : CameraManager.TorchCallback() {
+                override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+                    if (cameraId == torchCameraId) torchEnabled = enabled
+                }
+            }
+            torchCallback = callback
+            runCatching { cameraManager?.registerTorchCallback(callback, null) }
+                .onFailure { Log.w(TAG, "Could not register torch callback", it) }
+        }
+
         read()
     }
 
     fun stop() {
         runCatching { context.unregisterReceiver(receiver) }
+        torchCallback?.let { callback ->
+            runCatching { cameraManager?.unregisterTorchCallback(callback) }
+                .onFailure { Log.w(TAG, "Could not unregister torch callback", it) }
+        }
+        torchCallback = null
     }
 
     /**
@@ -131,27 +186,48 @@ class QuickControlsState(private val context: Context) {
 
         bluetoothEnabled = runCatching {
             // getDefaultAdapter() is deprecated in favour of BluetoothManager,
-            // which is what the platform now routes through anyway.
+            // which is what the platform now routes through anyway. From API 31
+            // this needs BLUETOOTH_CONNECT at runtime; without it the call
+            // throws and the tile would read "off" while Bluetooth is on, so the
+            // refusal is recorded rather than swallowed.
             (context.getSystemService(Context.BLUETOOTH_SERVICE) as? android.bluetooth.BluetoothManager)
                 ?.adapter?.isEnabled == true
+        }.onFailure {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                bluetoothNeedsPermission = !hasBluetoothPermission()
+            }
         }.getOrDefault(false)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasBluetoothPermission()) {
+            bluetoothNeedsPermission = true
+        }
 
         dndEnabled = runCatching {
             notificationManager?.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL
         }.getOrDefault(false)
 
         torchEnabled = runCatching {
-            torchCameraId?.let {
-                cameraManager?.getCameraCharacteristics(it)
-                    ?.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-            } == true
-        }.getOrDefault(false) && torchEnabled
+            // The callback above owns this value; the boolean state is only kept
+            // so a panel that opens before the first callback still shows
+            // something sane. The capability check must NOT be folded into the
+            // state, or the tile could never read as on.
+            torchCameraId != null && torchEnabled
+        }.getOrDefault(false)
 
         ringerMode = runCatching { audioManager?.ringerMode ?: AudioManager.RINGER_MODE_NORMAL }
             .getOrDefault(AudioManager.RINGER_MODE_NORMAL)
 
         brightness = runCatching {
-            Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128) / 255f
+            // The window override, when set, is what the user is actually
+            // looking at — the system value behind it can be anything. Reading
+            // the system value first would make the slider snap back to a level
+            // that is not in effect.
+            val window = activity?.window?.attributes?.screenBrightness ?: -1f
+            if (window >= 0f) {
+                window
+            } else {
+                Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128) / 255f
+            }
         }.getOrDefault(0.5f)
 
         rotationLocked = runCatching {
@@ -160,6 +236,19 @@ class QuickControlsState(private val context: Context) {
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────
+
+    /** True when the runtime Bluetooth permission has been granted. */
+    private fun hasBluetoothPermission(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    /** Re-reads after a permission result, so a granted tile stops lying. */
+    fun onPermissionResult() {
+        bluetoothNeedsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            !hasBluetoothPermission()
+        read()
+    }
 
     /**
      * Opens the system's Wi-Fi panel. Android removed the public Wi-Fi setter,
@@ -209,13 +298,43 @@ class QuickControlsState(private val context: Context) {
     fun applyBrightness(fraction: Float) {
         val clamped = fraction.coerceIn(0.02f, 1f)
         brightness = clamped
-        runCatching {
-            Settings.System.putInt(
-                context.contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                (clamped * 255).toInt(),
-            )
-        }.onFailure { Log.w(TAG, "Brightness write failed", it) }
+        val value = (clamped * 255).toInt()
+
+        // Two writes, because they cover different devices.
+        //
+        // WRITE_SETTINGS is a special permission that is never granted from a
+        // dialog, so on a fresh install the system write fails silently and the
+        // slider would appear to do nothing. The window attribute needs no
+        // permission at all and is what the user actually sees change, so it is
+        // applied first and unconditionally.
+        activity?.let { host ->
+            runCatching {
+                host.window.attributes = host.window.attributes.apply {
+                    screenBrightness = clamped
+                }
+            }.onFailure { Log.w(TAG, "Window brightness failed", it) }
+        }
+
+        if (Settings.System.canWrite(context)) {
+            runCatching {
+                Settings.System.putInt(
+                    context.contentResolver,
+                    Settings.System.SCREEN_BRIGHTNESS,
+                    value,
+                )
+            }.onFailure { Log.w(TAG, "Brightness write failed", it) }
+        } else {
+            brightnessNeedsPermission = true
+        }
+    }
+
+    /**
+     * Offers the system's write-settings screen, which is the only way
+     * [applyBrightness] can change the brightness of the whole device rather
+     * than just this window.
+     */
+    fun requestBrightnessPermission() {
+        openPanel(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}"))
     }
 
     /** Locks or frees rotation. A real system setting on every Android version. */
@@ -262,7 +381,8 @@ class QuickControlsState(private val context: Context) {
 @Composable
 fun rememberQuickControlsState(): QuickControlsState {
     val context = LocalContext.current
-    val state = remember(context) { QuickControlsState(context) }
+    val activity = context as? android.app.Activity
+    val state = remember(context) { QuickControlsState(context, activity) }
     DisposableEffect(state) {
         state.start()
         onDispose { state.stop() }
