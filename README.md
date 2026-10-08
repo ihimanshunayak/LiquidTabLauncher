@@ -16,6 +16,8 @@ graph TD
     App --> Widgets["WidgetSupport<br/>package + calendar watches"]
 
     Home["HomeActivity<br/>CATEGORY_HOME"] --> HomeScreen["HomeScreen"]
+    Welcome["WelcomeActivity<br/>CATEGORY_LAUNCHER"] --> Home
+    Welcome --> SettingsActivity["SettingsActivity"]
     HomeScreen --> Cells["WorkspaceCell / Dock"]
     HomeScreen --> Panels["FolderPanel / WidgetPicker<br/>ItemMenu / PageManager / ControlCenter"]
     HomeScreen --> Library["AppLibrary"]
@@ -55,6 +57,20 @@ adb shell cmd package set-home-activity com.ihimanshunayak.liquidtab.debug/com.i
 
 The debug build installs under `com.ihimanshunayak.liquidtab.debug`, so it never
 replaces a release install.
+
+### Two entry points, and why both are needed
+
+The app exports **two** activities, and removing either one breaks a setup path:
+
+| Activity | Category | Why it exists |
+|---|---|---|
+| `WelcomeActivity` | `LAUNCHER` | The app-drawer icon. Android only offers the Home role from a screen the user has to reach first, so a launcher with no `LAUNCHER` entry cannot be opened — and therefore cannot be made Home. It is also the only route to Settings from outside the launcher. |
+| `HomeActivity` | `HOME` + `DEFAULT` | What actually draws Home once the role is held. |
+
+A launcher that declares only `CATEGORY_HOME` installs perfectly and then looks
+broken: no icon, nothing to tap, and no way back in. `WelcomeActivity` exists to
+break that circular dependency. It re-checks the Home role on every `ON_RESUME`,
+so it reports the truth after the user answers Android's own prompt.
 
 ## Layout
 
@@ -140,6 +156,24 @@ launch fails, not left as a dead icon until the next package broadcast. A
 workspace payload written by a newer build is copied aside under
 `workspace_json_bad` rather than being interpreted.
 
+**A recorded layer must never contain the surface that samples it.** This is the
+one bug in this project that cost a native crash with no Kotlin frame to point
+at it, so it is written down where the next person will look for it.
+
+`HomeActivity` originally applied `Modifier.layerBackdrop(appBackdrop)` to the
+whole-window `Box`. The dock's glass surfaces are *descendants* of that Box and
+sample the same backdrop, so the recorded `GraphicsLayer` transitively contained
+the node that drew it. Android's render thread walked that cycle in
+`RenderNode::prepareTreeImpl` until the stack ran out — `SIGSEGV` in
+`RenderThread`, 512 frames of `prepareTreeImpl ↔ prepareListAndChildren`, and
+not a single app frame in the trace, because none of it was app code.
+
+The fix is a placement rule, not a workaround: the recorded layer now sits on
+`HomeBackground` alone. Nothing visible behind the dock changed — the grid stops
+above the dock, so the wallpaper *is* the entire picture behind that glass. Any
+future surface that wants to sample the window must be a **sibling** of the node
+that records the layer, never a descendant of it.
+
 **A low-memory kill must not lose a layout.** `LauncherStore` debounces writes
 during a drag, so `LiquidTabApp` forces a flush on `onTrimMemory` and
 `onLowMemory` — and `AppRepository.trim()` shrinks the icon cache to a floor
@@ -186,6 +220,33 @@ runs and produces `app-release-unsigned.apk` rather than failing.
 `minSdk 26`, `targetSdk 36`, `compileSdk 37`. Real-time backdrop blur needs
 Android 12 (`RenderEffect`); below that the glass falls back to a translucent
 scrim and the settings screen says so.
+
+### Glass on a device without a GPU
+
+Liquid Glass is not free, and the two ways it can be expensive are worth knowing
+before blaming the launcher:
+
+- **The full pipeline needs a real GPU.** Each glass surface records its backdrop
+  and pushes it through a colour matrix, a blur and an AGSL lens shader. On a
+  software rasterizer — an emulator started with `hw.gpu.enabled = no`, or
+  `-gpu swiftshader_indirect` — that shader is compiled on the render thread,
+  and the wait shows up as the app not answering Android's first input dispatch.
+  Measured on an `android-36` x86_64 AVD:
+
+  | Emulator GPU | Glass on | Glass off |
+  |---|---|---|
+  | software (`swiftshader_indirect`) | ~8 s cold start, 1 input-dispatch ANR | ~5 s, no ANR |
+  | host (`-gpu host`) | fast, no app ANR | fast |
+
+  So the ANR is the emulator's software GL, not the app's logic — but "reduce
+  dynamic blur" in Settings is the supported escape hatch on a device that
+  struggles, and it turns every surface solid without changing the layout.
+
+- **`-gpu host` softens the wait but breaks `screencap`.** On a host-GPU
+  emulator `adb exec-out screencap` can return an all-black frame even while the
+  app renders correctly to the display. Do not read a black screenshot as a
+  broken UI; check `dumpsys window | grep mCurrentFocus` and `dumpsys gfxinfo`
+  instead.
 
 ## Accessibility
 
