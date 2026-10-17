@@ -34,11 +34,16 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.mandatorySystemGestures
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -52,8 +57,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -77,6 +84,21 @@ import com.ihimanshunayak.liquidtab.util.launchApp
 
 /** Which full-screen surface is currently over Home. */
 private enum class Surface { NONE, LIBRARY, SEARCH }
+
+/**
+ * How tall the strip along each edge is that counts as "from the top" or "from
+ * the bottom" for the two edge gestures, once the system's own inset has been
+ * added on top of it. Wide enough to hit without aiming, narrow enough that a
+ * drag beginning in the middle of the grid is never mistaken for one.
+ */
+private const val EDGE_BAND_PX = 96f
+
+/**
+ * How far a finger has to travel once it starts inside a band before the
+ * gesture counts. Small enough that a flick registers, large enough that a
+ * slightly crooked tap on an icon in the top row does not.
+ */
+private const val EDGE_DRAG_THRESHOLD_PX = 60f
 
 class HomeActivity : ComponentActivity() {
 
@@ -192,6 +214,32 @@ private fun LauncherRoot(
     var showControls by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
 
+    // How much of the window's top and bottom the system keeps for itself. Read
+    // as pixels rather than applied as padding: the launcher draws edge to edge
+    // by design, and only the gesture bands need to know where the reachable
+    // area starts.
+    //
+    // The status bar is not the whole story. Android also reserves a strip for
+    // its own edge gestures - on this platform the pull-down shade claims
+    // everything above the mandatory-gesture inset, and a touch that starts
+    // there is routed to SystemUI before the app's window sees it. A band that
+    // begins at the status bar therefore loses its first ~20px to the system
+    // and only answers to a swipe aimed lower than the user expects. Taking the
+    // larger of the two insets puts the band's near edge on the first pixel
+    // that genuinely belongs to this app.
+    val topStartPx = with(LocalDensity.current) {
+        maxOf(
+            WindowInsets.statusBars.getTop(this),
+            WindowInsets.mandatorySystemGestures.getTop(this),
+        ).toFloat()
+    }
+    val bottomStartPx = with(LocalDensity.current) {
+        maxOf(
+            WindowInsets.navigationBars.getBottom(this),
+            WindowInsets.mandatorySystemGestures.getBottom(this),
+        ).toFloat()
+    }
+
     // The Home press the grid reacts to, as opposed to the press the activity
     // counted. A press that has a surface to close is spent doing that - the
     // same order the system launcher uses, so a stray Home press in the library
@@ -257,32 +305,75 @@ private fun LauncherRoot(
                 // size, so they land where a hand expects on a tablet held in
                 // either orientation.
                 //
+                // The bands start where the *app* starts, not at pixel zero.
+                // With edge-to-edge the content is drawn behind the status bar
+                // and the navigation bar, but a touch in those strips belongs to
+                // the system: it opens the shade and never reaches this
+                // detector. A band measured from y=0 therefore asked the user to
+                // start a gesture in the one place this app cannot see, which is
+                // why the Control Center never opened. Measuring from the
+                // insets puts the band on the first reachable pixel instead.
+                //
                 // Only these two gestures are claimed. Android's own navigation
                 // gestures are left alone: the detector watches the areas the
                 // system does not use, and a drag anywhere else reaches the grid
                 // beneath it.
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(measuredWidth, measuredHeight) {
-                        var travel = 0f
-                        var startedAtY = 0f
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                travel = 0f
-                                startedAtY = offset.y
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                travel += amount.y
-                                val fromTop = startedAtY < 96f
-                                val fromBottom = startedAtY > size.height - 96f
+                    .pointerInput(measuredWidth, measuredHeight, topStartPx, bottomStartPx) {
+                        // Claimed in the Initial pass, before the workspace
+                        // scrolls.
+                        //
+                        // A drag that starts on the grid is offered to the
+                        // LazyVerticalGrid first, because children receive the
+                        // Main pass before their parents do. The grid consumes
+                        // every vertical drag it sees - even when it has nothing
+                        // left to scroll - so a detector listening in the Main
+                        // pass never saw the Control Center swipe at all. The
+                        // gesture only worked from the dock, which is not
+                        // scrollable, and that made it look like a band
+                        // miscalculation rather than an interception.
+                        //
+                        // The Initial pass walks the tree top down, so this
+                        // detector sees the down and the drag first and can
+                        // decide. It claims only what starts inside a band: a
+                        // drag from the middle of the grid is left untouched and
+                        // reaches the pager exactly as before.
+                        awaitEachGesture {
+                            val down = awaitFirstDown(
+                                requireUnconsumed = false,
+                                pass = PointerEventPass.Initial,
+                            )
+                            val fromTop = down.position.y < topStartPx + EDGE_BAND_PX
+                            val fromBottom = down.position.y >
+                                size.height - bottomStartPx - EDGE_BAND_PX
+                            if (!fromTop && !fromBottom) return@awaitEachGesture
+
+                            var travel = 0f
+                            var previousY = down.position.y
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                    ?: break
+                                if (!change.pressed) break
+                                travel += change.position.y - previousY
+                                previousY = change.position.y
                                 when {
-                                    travel > 90f && fromTop && !showControls -> showControls = true
-                                    travel < -90f && fromBottom && surface == Surface.NONE ->
+                                    fromTop && travel > EDGE_DRAG_THRESHOLD_PX &&
+                                        !showControls -> {
+                                        change.consume()
+                                        showControls = true
+                                        break
+                                    }
+                                    fromBottom && travel < -EDGE_DRAG_THRESHOLD_PX &&
+                                        surface == Surface.NONE -> {
+                                        change.consume()
                                         surface = Surface.LIBRARY
+                                        break
+                                    }
                                 }
-                            },
-                        )
+                            }
+                        }
                     },
             )
         }

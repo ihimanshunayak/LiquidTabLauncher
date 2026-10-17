@@ -36,12 +36,16 @@ android {
         // 1.x: v1.0 was the first public tag, v1.1 the first signed release.
         // 1.2 is the build that fixes the launch crash and adds the missing
         // app-drawer entry point. 1.3 moves every user-visible string into
-        // strings.xml so the UI can be translated. versionCode must rise with
-        // every published release or Android silently refuses the update -
-        // reinstalling an APK with an equal versionCode is a no-op on most
-        // devices.
-        versionCode = 4
-        versionName = "1.3"
+        // strings.xml so the UI can be translated. 1.4 makes the app settable
+        // as Home on Android 11+ and fixes the two gestures that could not be
+        // reached: the Control Center swipe, which the workspace grid was
+        // consuming before its parent saw it, and the top row of shortcuts,
+        // which was drawn underneath the status bar on displays with a tall
+        // inset. versionCode must rise with every published release or Android
+        // silently refuses the update - reinstalling an APK with an equal
+        // versionCode is a no-op on most devices.
+        versionCode = 5
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

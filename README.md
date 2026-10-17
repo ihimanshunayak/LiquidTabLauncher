@@ -174,6 +174,35 @@ above the dock, so the wallpaper *is* the entire picture behind that glass. Any
 future surface that wants to sample the window must be a **sibling** of the node
 that records the layer, never a descendant of it.
 
+**A child gets the drag first, so the edge gestures are claimed in the Initial
+pass.** Both edge gestures live on a `pointerInput` above the workspace, which
+looks like the obvious place to put them — and it is the one place they cannot
+work from. Compose delivers pointer events to the deepest node first on the Main
+pass, so the workspace's `LazyVerticalGrid` sees every vertical drag before the
+detector above it does. A lazy grid consumes vertical drags even when it has
+nothing left to scroll, so the Control Center swipe was swallowed whole; the
+library swipe survived only because the dock it started on is not scrollable.
+
+Listening with `detectDragGestures` in the Main pass produced a gesture that
+worked from the dock and nowhere else. The detector now reads the Initial pass,
+which walks the tree top-down, and claims the gesture only when the down lands
+inside a band — a drag from the middle of the grid never reaches it and still
+scrolls the pager exactly as before.
+
+The band itself is measured from `max(statusBars, mandatorySystemGestures)`, not
+from the status bar. On the test display the status bar ends at 128px but Android
+reserves 146px for its own edge gestures and routes a touch starting in that
+strip to SystemUI; a band anchored at 128 was still losing its first 18px to the
+system and answered only to a swipe aimed lower than a thumb expects.
+
+**The top row of shortcuts clears the status bar, not a fixed offset.** The
+workspace column used to be padded `24.dp` from the top of the window, which is
+aligned with the status bar only on the display whose inset it was chosen to
+match. On a 128px cutout inset the first row of icons was drawn at y=63 —
+underneath the clock and the signal bars — while still accepting touches. The
+padding is now `WindowInsets.statusBars`, so the first row starts below the
+inset on every device.
+
 **A low-memory kill must not lose a layout.** `LauncherStore` debounces writes
 during a drag, so `LiquidTabApp` forces a flush on `onTrimMemory` and
 `onLowMemory` — and `AppRepository.trim()` shrinks the icon cache to a floor

@@ -71,6 +71,19 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!--
+          Visibility of the other Home apps. Android 11 filters package
+          resolution per calling app, and an app can always see itself — so
+          without this entry the only MAIN + HOME activity this process can
+          resolve is its own, and every "am I the default Home app?" check
+          answers yes on a device where another launcher is chosen. The
+          launcher is only ever this visible on purpose: it needs to name the
+          app it is competing with, not to enumerate the device.
+        -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
         <intent>
             <action android:name="androidx.media3.session.MediaLibraryService" />
         </intent>
@@ -138,7 +151,17 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|density|uiMode|layoutDirection"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.LiquidTab.Transparent">
-            <intent-filter android:priority="1">
+            <!--
+              No `android:priority` here, deliberately. Priority orders the
+              *candidates* the system considers, and a Home app that outranks
+              the others can be picked without the user ever seeing the chooser
+              — which is how a launcher takes over Home on a device where
+              somebody already chose one. AOSP's Launcher3, Lawnchair and Neo
+              Launcher all leave it unset and let the user's preferred-activity
+              record decide, which is also what makes the RoleManager the
+              authority on API 29+. Claiming the role is the user's decision.
+            -->
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />

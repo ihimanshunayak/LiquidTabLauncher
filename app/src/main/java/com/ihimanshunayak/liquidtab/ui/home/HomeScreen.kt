@@ -36,11 +36,14 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -291,7 +294,13 @@ fun HomeScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(top = 24.dp),
+                // The first row of shortcuts has to clear the status bar, not
+                // merely sit a fixed distance from the top of the window. A
+                // fixed offset is aligned with the status bar only on the device
+                // whose inset it was picked to match: on a taller inset the top
+                // row of icons is drawn underneath the clock and the signal
+                // bars, which is what a 24dp pad did on a 128px cutout display.
+                .windowInsetsPadding(WindowInsets.statusBars),
         ) {
             WorkspacePager(
                 modifier = Modifier.weight(1f),
@@ -374,7 +383,7 @@ fun HomeScreen(
                         openFolderId = null
                     } else {
                         haptics.play(Haptic.ToggleOff)
-                        toast(context, "That app is no longer installed")
+                        toast(context, context.getString(R.string.toast_app_gone))
                     }
                 },
                 onRemoveApp = { ref ->

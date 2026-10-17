@@ -35,14 +35,45 @@ private const val TAG = "HomeRole"
 private const val LEGACY_HOME_SETTINGS_ACTION = "android.settings.HOME_SETTINGS"
 
 /**
- * Whether this package currently resolves the system's Home intent.
+ * Whether this app is the system's Home app right now.
  *
- * The check is the one Android itself uses to decide which app draws Home, so
- * it cannot disagree with the behaviour the user is seeing: a launcher that
- * claimed otherwise would be telling the user something the next Home press
- * contradicts.
+ * The RoleManager answers on API 29+, and it is the only check that cannot be
+ * fooled by package visibility. Android 11 made package queries per-app: a
+ * `resolveActivity` call only sees the Home activities the caller declares in
+ * `<queries>`, and it always sees itself. A launcher that asked that question
+ * without declaring the Home intent was therefore told "you are Home" on a
+ * device where a different launcher was drawing Home — the exact contradiction
+ * this function exists to avoid.
+ *
+ * The role is a binder call against the role service rather than a package
+ * query, so it reports what the system will actually do on the next Home press
+ * regardless of what this app can see. Below API 29 there is no Home role and
+ * no visibility filtering either, so the resolution check is both available
+ * and correct there.
  */
-fun isDefaultHome(context: Context): Boolean = try {
+fun isDefaultHome(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val roles = context.getSystemService(RoleManager::class.java)
+        if (roles != null && roles.isRoleAvailable(RoleManager.ROLE_HOME)) {
+            return try {
+                roles.isRoleHeld(RoleManager.ROLE_HOME)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Could not read the Home role", t)
+                false
+            }
+        }
+    }
+    return resolvesOwnHome(context)
+}
+
+/**
+ * The pre-29 answer, and the fallback on a device that exposes no Home role.
+ *
+ * Matching on the resolved package rather than on the resolved component is
+ * deliberate: the Home intent can be answered by an activity alias, and an
+ * alias carries the declaring package's name.
+ */
+private fun resolvesOwnHome(context: Context): Boolean = try {
     val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
     val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         context.packageManager.resolveActivity(

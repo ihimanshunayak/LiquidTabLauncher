@@ -55,6 +55,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.annotation.StringRes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ihimanshunayak.liquidtab.BuildConfig
 import com.ihimanshunayak.liquidtab.R
 import com.ihimanshunayak.liquidtab.ui.glass.lightweightLiquidGlass
@@ -91,11 +95,21 @@ fun AboutScreen(
 ) {
     val context = LocalContext.current
 
-    // Read once per entry, not per frame: the Home role can change while the
-    // launcher is in the background, and it should be re-read the next time
-    // this screen is opened rather than cost a PackageManager query per
-    // recomposition.
-    val homeStatus = remember { mutableStateOf(isDefaultHome(context)) }
+    // Re-read on every resume, not per frame and not once: the user leaves this
+    // screen to answer Android's Home-role prompt, and the status has to reflect
+    // the answer they gave while it was away. A value read once at composition
+    // would still be reporting the old role after they had just changed it.
+    var homeStatus by remember { mutableStateOf(isDefaultHome(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                homeStatus = isDefaultHome(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var showNotices by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxSize()) {
@@ -141,13 +155,13 @@ fun AboutScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = if (homeStatus.value) {
+                            imageVector = if (homeStatus) {
                                 Icons.Rounded.CheckCircle
                             } else {
                                 Icons.Rounded.RadioButtonUnchecked
                             },
                             contentDescription = null,
-                            tint = if (homeStatus.value) {
+                            tint = if (homeStatus) {
                                 MaterialTheme.colorScheme.primary
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -157,7 +171,7 @@ fun AboutScreen(
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
-                                text = if (homeStatus.value) {
+                                text = if (homeStatus) {
                                     stringResource(R.string.about_home_yes)
                                 } else {
                                     stringResource(R.string.about_home_no)
@@ -166,7 +180,7 @@ fun AboutScreen(
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text = if (homeStatus.value) {
+                                text = if (homeStatus) {
                                     stringResource(R.string.about_home_yes_body)
                                 } else {
                                     stringResource(R.string.about_home_no_body)
@@ -176,13 +190,13 @@ fun AboutScreen(
                             )
                         }
                     }
-                    if (!homeStatus.value) {
+                    if (!homeStatus) {
                         RowDivider()
                         NavRow(
                             title = stringResource(R.string.about_choose_home),
                             subtitle = stringResource(R.string.about_choose_home_summary),
                             onClick = {
-                                if (openDefaultHomeSettings(context)) homeStatus.value = isDefaultHome(context)
+                                if (openDefaultHomeSettings(context)) homeStatus = isDefaultHome(context)
                                 else toast(context, context.getString(R.string.toast_no_home_setting))
                             },
                         )
